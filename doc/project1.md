@@ -4,7 +4,7 @@ Design Document for Project 1: Threads
 ## Group Members
 
 * Noah Poole <_jellyfish_@berkeley.edu>
-* William Ju <w99j99@berkeley.edu>
+* FirstName LastName <email@domain.example>
 * FirstName LastName <email@domain.example>
 * FirstName LastName <email@domain.example>
 
@@ -101,20 +101,14 @@ All of our values are updated all together at once using update_mlfqs. Because o
 
 ## Rationale
 There were many ways to decide on how to decide which thread to run when there are multiple threads in the highest priority queue. One of the most logical ways was to pick the thread that had the lowest niceness value. While this method makes sense, it involves checking through every thread's niceness and will take linear time to decide which thread to run. By using a queue and using first in first out, it will take us constant time to choose which thread we will run in this case, which is a lot faster than using niceness. 
-
+  
 # Additional Questions
-1.
- 2.
-timer ticks | R(A) | R(B) | R(C) | P(A) | P(B) | P(C) | thread to run
-------------|------|------|------|------|------|------|--------------
- 0          |   0  |   0  |  0   |   63 |   61 |   59 |A
- 4          |   4  |   0  |  0   |   62 |   61 |  59  |A
- 8          |   8  |   0  |   0  |    61|   61 |  59  |B
-12          |   8  |   4  |   0  |   61 |   60 |  59  |A
-16          |   12 |   4  |   0  |   60 |  60  |  59  |B
-20          |   12 |   8  |   0  |   60 |  59  |  59  |A
-24          |   16 |   8  |  0   |   59 |  59  |  59  |C
-28          |   16 |   8  |  4   |   59 |  59  |  58  |B
-32          |   16 |  12  |  4   |   59 |  58  |  58  |A
-36          |   20 |  12  |  4   |   58 |  58  |   58 |C
-3. Yes. We had to decide which thread to choose when there was more than 1 thread that had the same priority. At timer ticks 8, thread A and B both had a priority of 61. We used first in first out to decide which thread would run first. In this case, thread B was the first thread to have a priority of 61, thus we chose thread B over thread A. 
+### Question 1
+- Initialize a semaphore and a lock.
+- Spawn three threads with priorties A, B, and C where A is highest priority and C is lowest priority.
+- Have C acquire the lock.
+- Then have A attempt to acquire the lock.
+- B and C both down the semaphore.
+- Up the semaphore.
+- C should acquire the semaphore and runs its print statement "Finished thread C"
+If B acquires the semaphore instead of C, "Finished thread B" will print instead, and we know C's priority wasn't raised to A's.
