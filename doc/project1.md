@@ -48,68 +48,6 @@ We also don't have to worry about threads becoming dereferenced while we are put
 - `timer_tick` has to decrement an entire list every call.
 - When a thread is awaken, `timer_tick` may slow due to a call to `sinkEntry`.
 
-
-# Task 2: Priority Scheduler 
-
-## Data Structures and Functions
-```
-In thread.c
-Use these to hold values
-int eff_prio;
-int base_prio;
-struct list locklist
-
-change 
-init_thread(thread, name, priority)
-next_thread_to_run(void)
-thread_get_priority(void)
-thread_set_priority(priority)
-
-In synch.c
-struct list locklist
-int priority
-sema_up(semaphore);
-lock_init(lock);
-lock_acquire(lock);
-lock_try_acquire(lock);
-lock_release(lock);
-
-```
-### Next thread to run and unblock
-We will change next_thread_to_run() to use a max queue instead of list_pop_front(). Popping the front would not be so bad if everything was sorted when it went in and things changed but this way no sorting is needed. In list.c, I believe that the function list_max() will give us what we need to get the highest priority thread. Although this is not a real max queue, it functions the same as in we "pop" the thread off the "queue" by just straight up removing it. To unblock a thread, we will use the same exact method by just finding the highest priority thread and unblocking it in sema_up().  
-
-### Priorities and locks 
-The locks will represent the priority of the thread so that it is easy to tell what the priority is by looking at the locks.
-The only time that priority changes is when a thread waits for a lock and the lock's priority is less than the thread. Must be changed in lock_acquire().
-
-### Acquire a lock
-There isnt much to do here except add the lock to the locklist with its priority.
-
-### Releasing
-In lock_release(), we will use list_max() to find the priority of the waiters and set the priority to that. The thread will then set its priority to the lock's priority afterward.
-
-### Compute effective priority
-To compute this, we get the thread's priority with thread_set_priority() and then we would just add all the locks' priorities together to get the actual effective prioirty. Basically sum up every priority in a thread.
-
-### Changing threads priority
-This should happen only if a lock has been released. We will call thread_set_priority() and we set it to the max of the threads priority or the locks priority. This could raise the priority of the locks based on previous conditions.
-
-## Synchronization
-Scheduling priorities should be safe since these are run in sema_up and next_thread_to_run(). For the donations, there are actually alot of possibilities of data being changed because of interrupts and stuff. Instead of accounting for each and every case, we decided to just disable interrupts during the process so that it can run without the danger of being changed. 
-
-## Rationale 
-
-### Priorities
-we considered using a different data structures such as a linked list or a heap or manually sorting a list but when reading through the code, we found list_max(). We assume this works so we are going to use it. All this means is we need higher priority to have a higher value. We decided to use this because it makes it simpler because writing or using linked lists could leave lots of bugs with sorting. The sorting must also be done whenever a priority changes and for the correct thing to pop out of the queue. There is no need to sort the whole thing either as long as we know what the max priority is either because it is prone to change and ultimately meaningless as we only need to know the next.
-
-### Waiting list
-For the semaphores, we do the same thing. The problem is that semaphores also have their priority updated all the time so sorting is honestly a really big pain. We found that for threading and stuff, it's just easier to find the biggest one and use list_max() because thats all the program needs to know since it needs to know what happens next and nothing else.
-
-### Donation and lock priority
-
-When a lock is released, it may lose the donation property. Then it will move on to the next recipient of the donation which means we will need to find the max priority of threads waiting on the just released thread. There is no need to find the priorities of the wait list of locks when we can just find the max lock. The lock will represent the priority so there is no need to recompute each time.
-
-
 # Task 3: MLFQS
 
 ## Data Structures and Functions
@@ -165,7 +103,7 @@ All of our values are updated all together at once using update_mlfqs. Because o
 There were many ways to decide on how to decide which thread to run when there are multiple threads in the highest priority queue. One of the most logical ways was to pick the thread that had the lowest niceness value. While this method makes sense, it involves checking through every thread's niceness and will take linear time to decide which thread to run. By using a queue and using first in first out, it will take us constant time to choose which thread we will run in this case, which is a lot faster than using niceness. 
   
 # Additional Questions
-### Question 1
+1.
 - Initialize a semaphore and a lock.
 - Spawn three threads with priorties A, B, and C where A is highest priority and C is lowest priority.
 - Have C acquire the lock.
@@ -174,3 +112,18 @@ There were many ways to decide on how to decide which thread to run when there a
 - Up the semaphore.
 - C should acquire the semaphore and runs its print statement "Finished thread C"
 If B acquires the semaphore instead of C, "Finished thread B" will print instead, and we know C's priority wasn't raised to A's.
+
+2.
+timer ticks | R(A) | R(B) | R(C) | P(A) | P(B) | P(C) | thread to run
+------------|------|------|------|------|------|------|--------------
+ 0          |   0  |   0  |  0   |   63 |   61 |   59 |A
+ 4          |   4  |   0  |  0   |   62 |   61 |  59  |A
+ 8          |   8  |   0  |   0  |    61|   61 |  59  |B
+12          |   8  |   4  |   0  |   61 |   60 |  59  |A
+16          |   12 |   4  |   0  |   60 |  60  |  59  |B
+20          |   12 |   8  |   0  |   60 |  59  |  59  |A
+24          |   16 |   8  |  0   |   59 |  59  |  59  |C
+28          |   16 |   8  |  4   |   59 |  59  |  58  |B
+32          |   16 |  12  |  4   |   59 |  58  |  58  |A
+36          |   20 |  12  |  4   |   58 |  58  |   58 |C
+3. Yes. We had to decide which thread to choose when there was more than 1 thread that had the same priority. At timer ticks 8, thread A and B both had a priority of 61. We used first in first out to decide which thread would run first. In this case, thread B was the first thread to have a priority of 61, thus we chose thread B over thread A. 
