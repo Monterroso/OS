@@ -4,9 +4,9 @@ Design Document for Project 1: Threads
 ## Group Members
 
 * Noah Poole <_jellyfish_@berkeley.edu>
-* FirstName LastName <email@domain.example>
-* FirstName LastName <email@domain.example>
-* FirstName LastName <email@domain.example>
+* Johnathan Chow <johnathan.chow18@berkeley.edu>
+* William Ju <w99j99@berkeley.edu>
+* Marcus Monterroso <mmonterroso@berkeley.edu>
 
 # Task 1: Efficient Alarm Clock
 
