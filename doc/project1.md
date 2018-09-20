@@ -11,18 +11,18 @@ Design Document for Project 1: Threads
 # Task 1: Efficient Alarm Clock
 
 ## Data Structures and Functions
-struct semaphore sema; 
-sema_init(&sema, 0); 
+struct semaphore sema
+sema_init(&sema, 0)
 The above semaphore blocks and unblocks threads that call timer_sleep().
 
-struct list `sleep_times`; 
-list_init(&`sleep_times`); 
+struct list `sleep_times`
+list_init(&`sleep_times`)
 This list holds the remaining time of each sleeping thread.
 
-int `floatEntry`(struct list * minHeap); 
+int `floatEntry`(struct list * minHeap)
 This function takes in a list and floats the value located at the end of the list.  Then, it returns final index of the value.
 
-void `sinkEntry`(struct list * minHeap); 
+void `sinkEntry`(struct list * minHeap)
 This function replaces the 0th element of the minHeap, and restructures the heap so it follows the proper conventions.
 
 ## Algorithms
