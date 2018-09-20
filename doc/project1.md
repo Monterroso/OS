@@ -74,8 +74,11 @@ lock_try_acquire(lock);
 lock_release(lock);
 
 for conditional variable
-int priority 
+int priority
+struct map threadlist
 
+to change
+cond_signal()
 ```
 ### Next thread to run and unblock
 We will change `next_thread_to_run()` to use a max queue instead of `list_pop_front()`. Popping the front would not be so bad if everything was sorted when it went in and things changed but this way no sorting is needed. In `list.c`, I believe that the function `list_max()` will give us what we need to get the highest priority thread. Although this is not a real max queue, it functions the same as in we "pop" the thread off the "queue" by just straight up removing it. To unblock a thread, we will use the same exact method by just finding the highest priority thread and unblocking it in `sema_up()`.  
@@ -85,7 +88,7 @@ The locks will represent the priority of the thread so that it is easy to tell w
 The only time that priority changes is when a thread waits for a lock and the lock's priority is less than the thread. Must be changed in `lock_acquire()`.
 
 ### Conditional variables
-For the conditional variables, we will just have an extra variable to hold the priority and when we need to handle it, we use a `list_max()` like the others to find the highest priority one. Change in `cond_signal()` to go for the max priority thread. We modded threads to show their priorities so when a conditional variable is satisfied and something needs to wake up, we check all threads for highest priority using `list_max()` to wake it up.
+For the conditional variables, we will just have an extra variable to hold the priority and when we need to handle it, we use a `list_max()` like the others to find the highest priority one. Change in `cond_signal()` to go for the max priority thread. We modded threads to show their priorities so when a conditional variable is satisfied and something needs to wake up, we check all threads for highest priority using `list_max()` to wake it up. We want to be sure to keep track of all threads that have donated to us. So we use a hashmap to store each lock and how much that lock has donated to this thread. Thus, when we release this lock, we can then get the amount it donated, and then subtract that from our current priority.
 
 ### Acquire a lock
 There isnt much to do here except add the lock to the locklist with its priority.
