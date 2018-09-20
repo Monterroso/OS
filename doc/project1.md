@@ -73,36 +73,42 @@ lock_acquire(lock);
 lock_try_acquire(lock);
 lock_release(lock);
 
+for conditional variable
+int priority 
+
 ```
 ### Next thread to run and unblock
-We will change next_thread_to_run() to use a max queue instead of list_pop_front(). Popping the front would not be so bad if everything was sorted when it went in and things changed but this way no sorting is needed. In list.c, I believe that the function list_max() will give us what we need to get the highest priority thread. Although this is not a real max queue, it functions the same as in we "pop" the thread off the "queue" by just straight up removing it. To unblock a thread, we will use the same exact method by just finding the highest priority thread and unblocking it in sema_up().  
+We will change `next_thread_to_run()` to use a max queue instead of `list_pop_front()`. Popping the front would not be so bad if everything was sorted when it went in and things changed but this way no sorting is needed. In `list.c`, I believe that the function `list_max()` will give us what we need to get the highest priority thread. Although this is not a real max queue, it functions the same as in we "pop" the thread off the "queue" by just straight up removing it. To unblock a thread, we will use the same exact method by just finding the highest priority thread and unblocking it in `sema_up()`.  
 
 ### Priorities and locks 
 The locks will represent the priority of the thread so that it is easy to tell what the priority is by looking at the locks.
-The only time that priority changes is when a thread waits for a lock and the lock's priority is less than the thread. Must be changed in lock_acquire().
+The only time that priority changes is when a thread waits for a lock and the lock's priority is less than the thread. Must be changed in `lock_acquire()`.
+
+### Conditional variables
+For the conditional variables, we will just have an extra variable to hold the priority and when we need to handle it, we use a `list_max()` like the others to find the highest priority one. Change in `cond_wait()` and `cond_signal()` to go for the max priority cond.
 
 ### Acquire a lock
 There isnt much to do here except add the lock to the locklist with its priority.
 
 ### Releasing
-In lock_release(), we will use list_max() to find the priority of the waiters and set the priority to that. The thread will then set its priority to the lock's priority afterward.
+In `lock_release()`, we will use `list_max()` to find the priority of the waiters and set the priority to that. The thread will then set its priority to the lock's priority afterward.
 
 ### Compute effective priority
-To compute this, we get the thread's priority with thread_set_priority() and then we would just add all the locks' priorities together to get the actual effective prioirty. Basically sum up every priority in a thread.
+To compute this, we get the thread's priority with `thread_set_priority()` and then we would just add all the locks' priorities together to get the actual effective prioirty. Basically sum up every priority in a thread.
 
 ### Changing threads priority
-This should happen only if a lock has been released. We will call thread_set_priority() and we set it to the max of the threads priority or the locks priority. This could raise the priority of the locks based on previous conditions.
+This should happen only if a lock has been released. We will call `thread_set_priority()` and we set it to the max of the threads priority or the locks priority. This could raise the priority of the locks based on previous conditions.
 
 ## Synchronization
-Scheduling priorities should be safe since these are run in sema_up and next_thread_to_run(). For the donations, there are actually alot of possibilities of data being changed because of interrupts and stuff. Instead of accounting for each and every case, we decided to just disable interrupts during the process so that it can run without the danger of being changed. 
+Scheduling priorities should be safe since these are run in `sema_up()` and `next_thread_to_run()`. For the donations, there are actually alot of possibilities of data being changed because of interrupts and stuff. Instead of accounting for each and every case, we decided to just disable interrupts during the process so that it can run without the danger of being changed. 
 
 ## Rationale 
 
 ### Priorities
-we considered using a different data structures such as a linked list or a heap or manually sorting a list but when reading through the code, we found list_max(). We assume this works so we are going to use it. All this means is we need higher priority to have a higher value. We decided to use this because it makes it simpler because writing or using linked lists could leave lots of bugs with sorting. The sorting must also be done whenever a priority changes and for the correct thing to pop out of the queue. There is no need to sort the whole thing either as long as we know what the max priority is either because it is prone to change and ultimately meaningless as we only need to know the next.
+we considered using a different data structures such as a linked list or a heap or manually sorting a list but when reading through the code, we found `list_max()`. We assume this works so we are going to use it. All this means is we need higher priority to have a higher value. We decided to use this because it makes it simpler because writing or using linked lists could leave lots of bugs with sorting. The sorting must also be done whenever a priority changes and for the correct thing to pop out of the queue. There is no need to sort the whole thing either as long as we know what the max priority is either because it is prone to change and ultimately meaningless as we only need to know the next.
 
 ### Waiting list
-For the semaphores, we do the same thing. The problem is that semaphores also have their priority updated all the time so sorting is honestly a really big pain. We found that for threading and stuff, it's just easier to find the biggest one and use list_max() because thats all the program needs to know since it needs to know what happens next and nothing else.
+For the semaphores, we do the same thing. The problem is that semaphores also have their priority updated all the time so sorting is honestly a really big pain. We found that for threading and stuff, it's just easier to find the biggest one and use `list_max()` because thats all the program needs to know since it needs to know what happens next and nothing else. Also we do the same for conditional variables because we only need to know the next thing to do, the highest priority.
 
 ### Donation and lock priority
 
