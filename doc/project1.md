@@ -85,7 +85,7 @@ The locks will represent the priority of the thread so that it is easy to tell w
 The only time that priority changes is when a thread waits for a lock and the lock's priority is less than the thread. Must be changed in `lock_acquire()`.
 
 ### Conditional variables
-For the conditional variables, we will just have an extra variable to hold the priority and when we need to handle it, we use a `list_max()` like the others to find the highest priority one. Change in `cond_wait()` and `cond_signal()` to go for the max priority cond.
+For the conditional variables, we will just have an extra variable to hold the priority and when we need to handle it, we use a `list_max()` like the others to find the highest priority one. Change in `cond_signal()` to go for the max priority thread. We modded threads to show their priorities so when a conditional variable is satisfied and something needs to wake up, we check all threads for highest priority using `list_max()` to wake it up.
 
 ### Acquire a lock
 There isnt much to do here except add the lock to the locklist with its priority.
