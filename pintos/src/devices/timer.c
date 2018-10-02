@@ -30,11 +30,15 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
-/* Sets up the timer to interrupt TIMER_FREQ times per second,
+static list sleeping_threads;
+
+/* Initializes SLEEPING_THREADS.
+   Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
 timer_init (void)
 {
+  list_init(&sleeping_threads);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -84,16 +88,31 @@ timer_elapsed (int64_t then)
   return timer_ticks () - then;
 }
 
+/* Returns true if TIME_REMAINING of node A is less than that of node B */
+bool sleep_less (const struct list_elem *a, const struct list_elem *b, void *aux) {
+  struct * sleep_node A = list_entry(a, struct sleep_node, elem);
+  struct * sleep_node B = list_entry(b, struct sleep_node, elem);
+  return A->time_remaining < B->time_remaining;
+}
+
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
 timer_sleep (int64_t ticks)
 {
-  int64_t start = timer_ticks ();
-
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks)
-    thread_yield ();
+
+  /* Creates a struct sleep_node to store a pointer to the thread and it's remaining sleep time */
+  struct sleep_node * node = malloc(sizeof(struct sleep_node));
+  struct list_elem * elem = malloc(sizeof(struct list_elem));
+  node->elem = elem;
+  node->time_remaining = ticks;
+  node->blocked_thread = thread_current();
+
+  /* Adds the current thread to the list of sleeping threads */
+  list_push_back(&sleeping_threads, elem);
+
+  thread_block();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
