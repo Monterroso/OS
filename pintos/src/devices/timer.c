@@ -88,13 +88,6 @@ timer_elapsed (int64_t then)
   return timer_ticks () - then;
 }
 
-/* Returns true if TIME_REMAINING of node A is less than that of node B */
-bool sleep_less (const struct list_elem *a, const struct list_elem *b, void *aux) {
-  struct * sleep_node A = list_entry(a, struct sleep_node, elem);
-  struct * sleep_node B = list_entry(b, struct sleep_node, elem);
-  return A->time_remaining < B->time_remaining;
-}
-
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
@@ -191,6 +184,23 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  
+  list_elem * elem = list_begin(sleeping_threads);
+  while (elem != list_end(sleeping_threads)) {
+    struct sleep_node * node = list_entry(elem, struct sleep_node, elem);
+    node->time_remaining -= 1;
+
+    if (node->time_remaining == 0)  {
+      thread_unblock(node->blocked_thread);
+      list_elem * temp = list_remove(elem);
+      free(elem);
+      free(node);
+      elem = temp;
+      /* TODO: Check if unblocked thread has higher priority than current thread */
+    } else {
+      elem = elem->next;
+    }
+  }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
