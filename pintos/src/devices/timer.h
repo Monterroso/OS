@@ -27,10 +27,10 @@ void timer_ndelay (int64_t nanoseconds);
 void timer_print_stats (void);
 
 /* Ensure that blocked_thread points to a valid thread when unblocking */
-struct sleep_node {
+typedef struct sleep_node {
   struct list_elem elem;
   int time_remaining;
   struct thread * blocked_thread;
-}
+} sleep_node;
 
 #endif /* devices/timer.h */

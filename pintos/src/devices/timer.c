@@ -95,8 +95,8 @@ timer_sleep (int64_t ticks)
 {
   ASSERT (intr_get_level () == INTR_ON);
 
-  /* Creates a struct sleep_node to store a pointer to the thread and it's remaining sleep time */
-  struct sleep_node * node = malloc(sizeof(struct sleep_node));
+  /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
+  sleep_node * node = malloc(sizeof(sleep_node));
   struct list_elem * elem = malloc(sizeof(struct list_elem));
   node->elem = elem;
   node->time_remaining = ticks;
@@ -184,10 +184,10 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
-  
-  list_elem * elem = list_begin(sleeping_threads);
-  while (elem != list_end(sleeping_threads)) {
-    struct sleep_node * node = list_entry(elem, struct sleep_node, elem);
+
+  list_elem * elem = list_begin(&sleeping_threads);
+  while (elem != list_end(&sleeping_threads)) {
+    sleep_node * node = list_entry(elem, sleep_node, elem);
     node->time_remaining -= 1;
 
     if (node->time_remaining == 0)  {
