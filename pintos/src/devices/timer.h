@@ -26,11 +26,6 @@ void timer_ndelay (int64_t nanoseconds);
 
 void timer_print_stats (void);
 
-/* Returns true if TIME_REMAINING of node A is less than that of node B */
-bool sleep_less (const struct list_elem *a,
-		 const struct list_elem *b,
-		 void *aux);
-
 /* Ensure that blocked_thread points to a valid thread when unblocking */
 typedef struct sleep_node {
   struct list_elem elem;
