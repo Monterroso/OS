@@ -188,14 +188,14 @@ timer_interrupt (struct intr_frame *args UNUSED)
   ticks++;
   thread_tick ();
 
-  list_elem * elem = list_begin(&sleeping_threads);
+  struct list_elem * elem = list_begin(&sleeping_threads);
   while (elem != list_end(&sleeping_threads)) {
     sleep_node * node = list_entry(elem, sleep_node, elem);
     node->time_remaining -= 1;
 
     if (node->time_remaining == 0)  {
       thread_unblock(node->blocked_thread);
-      list_elem * temp = list_remove(elem);
+      struct list_elem * temp = list_remove(elem);
       free(elem);
       free(node);
       elem = temp;
