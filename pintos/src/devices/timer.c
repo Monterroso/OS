@@ -101,7 +101,7 @@ timer_sleep (int64_t ticks)
   /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
   sleep_node * node = malloc(sizeof(sleep_node));
   struct list_elem * elem = malloc(sizeof(struct list_elem));
-  node->elem = elem;
+  node->elem = *elem;
   node->time_remaining = ticks;
   node->blocked_thread = thread_current();
 
