@@ -7,6 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/malloc.h"
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -30,7 +31,7 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
-static list sleeping_threads;
+static struct list sleeping_threads;
 
 /* Initializes SLEEPING_THREADS.
    Sets up the timer to interrupt TIMER_FREQ times per second,
@@ -94,6 +95,8 @@ void
 timer_sleep (int64_t ticks)
 {
   ASSERT (intr_get_level () == INTR_ON);
+  if (ticks <= 0)
+    return;
 
   /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
   sleep_node * node = malloc(sizeof(sleep_node));
@@ -198,7 +201,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
       elem = temp;
       /* TODO: Check if unblocked thread has higher priority than current thread */
     } else {
-      elem = elem->next;
+      elem = list_next(elem);
     }
   }
 }
