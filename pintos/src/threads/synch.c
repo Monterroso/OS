@@ -113,11 +113,14 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
-  if (!list_empty (&sema->waiters))
-    thread_unblock (list_entry (list_pop_front (&sema->waiters),
-                                struct thread, elem));
+  if (!list_empty (&sema->waiters)) {
+    struct list_elem *maxsema = list_max (&sema->waiters, thread_comparator, NULL);
+    list_remove (maxsema);
+    thread_unblock (list_entry (maxsema, struct thread, elem));
+  }
   sema->value++;
   intr_set_level (old_level);
+
 }
 
 static void sema_test_helper (void *sema_);
@@ -178,6 +181,8 @@ lock_init (struct lock *lock)
   ASSERT (lock != NULL);
 
   lock->holder = NULL;
+  //init to 0
+  lock->highestwaitprio = fix_int(0);
   sema_init (&lock->semaphore, 1);
 }
 
