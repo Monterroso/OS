@@ -201,7 +201,9 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  //in sema_down, we will assign the weights. 
   sema_down (&lock->semaphore);
+
   lock->holder = thread_current ();
 }
 

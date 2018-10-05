@@ -99,6 +99,18 @@ struct thread
     fixed_point_t priority;
     fixed_point_t bpriority;
 
+    /*This will be a LL which will
+    include all of the threads donating to
+    this thread. 
+
+    The assumption is that when a thread is waiting,
+    it can only wait for one thread at a time, and
+    cannot donate multiple times. 
+
+    This list will include list_elems from all of 
+    the locks that are held*/
+    struct list donators;
+
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
     uint32_t *pagedir;                  /* Page directory. */
