@@ -99,6 +99,7 @@ timer_free_nodes () {
     sleep_node * node = list_entry(elem, sleep_node, elem);
     elem = list_remove(elem);
     free(node);
+  }
 }
 
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
