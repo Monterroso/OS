@@ -98,17 +98,18 @@ timer_sleep (int64_t ticks)
   if (ticks <= 0)
     return;
 
+
   /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
   sleep_node * node = malloc(sizeof(sleep_node));
-  struct list_elem * elem = malloc(sizeof(struct list_elem));
-  node->elem = *elem;
   node->time_remaining = ticks;
   node->blocked_thread = thread_current();
 
   /* Adds the current thread to the list of sleeping threads */
-  list_push_back(&sleeping_threads, elem);
+  list_push_back(&sleeping_threads, &(node->elem));
 
+  intr_disable();
   thread_block();
+  intr_enable();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -185,25 +186,31 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
-  ticks++;
-  thread_tick ();
+  //ticks++;
+  //thread_tick ();
 
+  enum intr_level old_level;
+  
   struct list_elem * elem = list_begin(&sleeping_threads);
   while (elem != list_end(&sleeping_threads)) {
     sleep_node * node = list_entry(elem, sleep_node, elem);
     node->time_remaining -= 1;
 
     if (node->time_remaining == 0)  {
+
+      old_level = intr_disable();
       thread_unblock(node->blocked_thread);
-      struct list_elem * temp = list_remove(elem);
-      free(elem);
+      intr_set_level(old_level);
+
+      elem = list_remove(elem);
       free(node);
-      elem = temp;
-      /* TODO: Check if unblocked thread has higher priority than current thread */
     } else {
       elem = list_next(elem);
     }
   }
+
+  ticks++;
+  thread_tick();
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
