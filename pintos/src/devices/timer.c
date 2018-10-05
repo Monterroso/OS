@@ -7,6 +7,7 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
+#include "threads/malloc.h"
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -30,11 +31,15 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
-/* Sets up the timer to interrupt TIMER_FREQ times per second,
+static struct list sleeping_threads;
+
+/* Initializes SLEEPING_THREADS.
+   Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
 timer_init (void)
 {
+  list_init(&sleeping_threads);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -89,11 +94,21 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks)
 {
-  int64_t start = timer_ticks ();
-
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks)
-    thread_yield ();
+  if (ticks <= 0)
+    return;
+
+  /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
+  sleep_node * node = malloc(sizeof(sleep_node));
+  struct list_elem * elem = malloc(sizeof(struct list_elem));
+  node->elem = *elem;
+  node->time_remaining = ticks;
+  node->blocked_thread = thread_current();
+
+  /* Adds the current thread to the list of sleeping threads */
+  list_push_back(&sleeping_threads, elem);
+
+  thread_block();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -172,6 +187,23 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+
+  struct list_elem * elem = list_begin(&sleeping_threads);
+  while (elem != list_end(&sleeping_threads)) {
+    sleep_node * node = list_entry(elem, sleep_node, elem);
+    node->time_remaining -= 1;
+
+    if (node->time_remaining == 0)  {
+      thread_unblock(node->blocked_thread);
+      struct list_elem * temp = list_remove(elem);
+      free(elem);
+      free(node);
+      elem = temp;
+      /* TODO: Check if unblocked thread has higher priority than current thread */
+    } else {
+      elem = list_next(elem);
+    }
+  }
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
