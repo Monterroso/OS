@@ -26,7 +26,8 @@ struct lock
 
 
     fixed_point_t highestwaitprio;
-    struct list_elem locklist;
+    struct list_elem locklock;
+
   };
 
 void lock_init (struct lock *);

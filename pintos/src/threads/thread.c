@@ -201,6 +201,8 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  thread_yield();
+
   return tid;
 }
 
@@ -326,7 +328,7 @@ thread_foreach (thread_action_func *func, void *aux)
   for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
     {
-      struct thread *t = 	 (e, struct thread, allelem);
+      struct thread *t = 	list_entry (e, struct thread, allelem);
       func (t, aux);
     }
 }
@@ -467,7 +469,12 @@ init_thread (struct thread *t, const char *name, int priority)
 
   //want to set our added features
   t->bpriority =  fix_int (priority);
-  t->donators = 
+
+  // t->donators = 
+  list_init(&t->thread_locklist);
+  // t->thread_locklist = list_init(&t->held_locks);
+  t->curry_lock = NULL;
+
 
   t->magic = THREAD_MAGIC;
 

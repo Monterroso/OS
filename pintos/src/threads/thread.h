@@ -99,6 +99,9 @@ struct thread
     fixed_point_t priority;
     fixed_point_t bpriority;
 
+    struct list thread_locklist;// held locks
+    struct lock *curry_lock;    //lock currently waited on
+
     /*This will be a LL which will
     include all of the threads donating to
     this thread. 
