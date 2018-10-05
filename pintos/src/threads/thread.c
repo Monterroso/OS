@@ -335,14 +335,15 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
-  thread_current ()->priority = new_priority;
+  thread_current ()->priority = fix_int(new_priority);
 }
 
 /* Returns the current thread's priority. */
 int
+// fixed_point_t doesnt work
 thread_get_priority (void)
 {
-  return thread_current ()->priority;
+  return fix_round(thread_current ()->priority);
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -461,7 +462,9 @@ init_thread (struct thread *t, const char *name, int priority)
   t->status = THREAD_BLOCKED;
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
-  t->priority = priority;
+  t->priority = fix_int (priority);
+  t->bpriority =  fix_int (priority);
+
   t->magic = THREAD_MAGIC;
 
   old_level = intr_disable ();
@@ -493,8 +496,31 @@ next_thread_to_run (void)
   if (list_empty (&ready_list))
     return idle_thread;
   else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+    {
+      struct list_elem *maxthread = list_max(&ready_list, thread_comparator, NULL);
+      list_remove(maxthread);
+      return list_entry (maxthread, struct thread, elem);
+    }
+      
 }
+
+//ty OH
+// In file included from ../../threads/thread.h:5:0,
+//                  from ../../threads/thread.c:1:
+// ../../lib/kernel/list.h:178:19: note: expected ‘_Bool (*)(const struct list_elem *, const struct list_elem *, void *)’ but argument is of type ‘_Bool (*)(struct list_elem *, struct list_elem *, void *)’
+
+bool thread_comparator(const struct list_elem *a, const struct list_elem *b, void *aux) {
+	struct thread *thread1 = list_entry(a, struct thread, elem);
+	struct thread *thread2 = list_entry(b, struct thread, elem);
+	int retval = fix_compare (thread1->priority, thread2->priority) == -1; 
+	return retval;
+}
+// bool thread_comparator(struct list_elem *a, struct list_elem *b) {
+// 	struct thread *thread1 = list_entry(a, struct thread, elem);
+// 	struct thread *thread2 = list_entry(b, struct thread, elem);
+// 	int retval = fix_compare (thread1->priority, thread2->priority) == -1; 
+// 	return retval;
+// }
 
 /* Completes a thread switch by activating the new thread's page
    tables, and, if the previous thread is dying, destroying it.
