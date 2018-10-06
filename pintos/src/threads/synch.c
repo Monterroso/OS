@@ -199,7 +199,7 @@ lock_init (struct lock *lock)
 void
 lock_acquire (struct lock *lock)
 {
-  
+
   // disabled
   enum intr_level old_level = intr_disable();
 
@@ -207,21 +207,29 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
+  struct thread * curr = thread_current();
+  curr->acquiring_lock = lock;
+
+  /* Loop for recursive priority donation */
+  struct thread * temp = curr;
+  struct thread * thread_receiving_donation;
+  while (temp->acquiring_lock != NULL) {
+    thread_receiving_donation = temp->acquiring_lock->holder;
+    if (thread_receiving_donation != NULL) {
+      if (thread_receiving_donation->priority < temp->priority) {
+        thread_receiving_donation->priority = temp->priority;
+      }
+    }
+    temp = thread_receiving_donation;
+  }
+
   //in sema_down, we will assign the weights.
   sema_down (&lock->semaphore);
 
-  lock->holder = thread_current ();
+  curr->acquiring_lock = NULL;
 
-
-  struct thread *current_thread = thread_current();
-  lock->holder = thread_current();
-  // current_thread->curry_lock = NULL;
-  // list_push_back(&current_thread->thread_locklist, &lock->locklock);
-  // if (fix_compare(current_thread->priority, lock->highestwaitprio) == -1)
-  //   current_thread->priority = lock->highestwaitprio;
-
-
-
+  lock->holder = curr;
+  list_push_back(&(curr->held_lock_list), &(lock->held_elem));
 
   //bring back undisable
   intr_set_level (old_level);
@@ -236,7 +244,7 @@ lock_acquire (struct lock *lock)
 bool
 lock_try_acquire (struct lock *lock)
 {
-  
+
   bool success;
 
   ASSERT (lock != NULL);
@@ -244,7 +252,9 @@ lock_try_acquire (struct lock *lock)
 
   success = sema_try_down (&lock->semaphore);
   if (success)
-    lock->holder = thread_current ();
+    struct thread * curr = thread_current();
+    lock->holder = curr;
+    list_push_back(&(curr->held_lock_list), &(lock->held_elem));
   return success;
 }
 
@@ -261,13 +271,38 @@ lock_release (struct lock *lock)
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
+  list_remove(&(lock->held_elem));
   lock->holder = NULL;
+
+
+  /* Loop for finding new donation after releasing lock */
+  struct thread * curr = thread_current();
+  struct list_elem * next_lock_node = list_begin(&(curr->held_lock_list));
+  fixed_point_t max_priority = curr->base_priority;
+
+  while (next_lock_node != list_end(&(curr->held_lock_list))) {
+    struct lock * next_lock = list_entry(next_lock_node, struct lock, held_elem);
+    struct list * waiters = &(next_lock->semaphore->waiters);
+
+    if (!list_empty(waiters)) {
+      struct list_elem * max_thread = list_max (waiters, thread_comparator, NULL);
+      fixed_point_t thread_priority = max_thread->priority;
+
+      if(fix_compare(max_priority, thread_priority) == -1) {
+        max_priority = thread_priority;
+      }
+    }
+
+    next_lock_node = list_next(&(curr->held_lock_list));
+  }
+
+  curr->priority = max_priority;
+
   sema_up (&lock->semaphore);
 
   intr_set_level(old_level);
-  if (old_level == INTR_ON)
-    thread_yield ();
-  
+  //if (old_level == INTR_ON)
+  //  thread_yield ();
 }
 
 /* Returns true if the current thread holds LOCK, false

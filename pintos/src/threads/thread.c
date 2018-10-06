@@ -92,6 +92,7 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
+  list_init (&held_lock_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -339,7 +340,11 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority)
 {
-  thread_current ()->priority = fix_int(new_priority);
+  struct thread * curr = thread_current();
+  curr->base_priority = fix_int(new_priority);
+  if (fix_compare(curr->base_priority, curr->priority) == 1) {
+    curr->priority = curr->base_priority
+  }
 }
 
 /* Returns the current thread's priority. */
@@ -347,7 +352,8 @@ int
 // fixed_point_t doesnt work
 thread_get_priority (void)
 {
-  return fix_round(thread_current ()->priority);
+  struct thread * curr = thread_current();
+  return fix_round(curr->priority);
 }
 
 /* Sets the current thread's nice value to NICE. */
@@ -467,10 +473,7 @@ init_thread (struct thread *t, const char *name, int priority)
   strlcpy (t->name, name, sizeof t->name);
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = fix_int (priority);
-
-
-  //want to set our added features
-  t->bpriority =  fix_int (priority);
+  t->base_priority =  fix_int (priority);
 
   t->magic = THREAD_MAGIC;
 
@@ -508,7 +511,7 @@ next_thread_to_run (void)
       list_remove(maxthread);
       return list_entry (maxthread, struct thread, elem);
     }
-      
+
 }
 
 //ty OH
@@ -519,13 +522,13 @@ next_thread_to_run (void)
 bool thread_comparator(const struct list_elem *a, const struct list_elem *b, UNUSED void *aux) {
 	struct thread *thread1 = list_entry(a, struct thread, elem);
 	struct thread *thread2 = list_entry(b, struct thread, elem);
-	int retval = fix_compare (thread1->priority, thread2->priority) == -1; 
+	int retval = fix_compare (thread1->priority, thread2->priority) == -1;
 	return retval;
 }
 // bool thread_comparator(struct list_elem *a, struct list_elem *b) {
 // 	struct thread *thread1 = list_entry(a, struct thread, elem);
 // 	struct thread *thread2 = list_entry(b, struct thread, elem);
-// 	int retval = fix_compare (thread1->priority, thread2->priority) == -1; 
+// 	int retval = fix_compare (thread1->priority, thread2->priority) == -1;
 // 	return retval;
 // }
 

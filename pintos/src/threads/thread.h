@@ -101,22 +101,11 @@ struct thread
 
     //John Part 2
     fixed_point_t priority;
-    fixed_point_t bpriority;
+    fixed_point_t base_priority;
 
-    struct list thread_locklist;// held locks
-    struct lock *curry_lock;    //lock currently waited on
-
-    /*This will be a LL which will
-    include all of the threads donating to
-    this thread. 
-
-    The assumption is that when a thread is waiting,
-    it can only wait for one thread at a time, and
-    cannot donate multiple times. 
-
-    This list will include list_elems from all of 
-    the locks that are held*/
-    struct list donators;
+    struct list held_lock_list;// held locks
+    struct lock * acquiring_lock;
+  }
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
