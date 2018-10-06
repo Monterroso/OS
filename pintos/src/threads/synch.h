@@ -26,7 +26,8 @@ struct lock
 
 
     fixed_point_t highestwaitprio;
-    struct list_elem locklist;
+    struct list_elem locklock;
+
   };
 
 bool sema_elem_less(const struct list_elem *a, const struct list_elem *b, void *aux);

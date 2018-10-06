@@ -112,6 +112,7 @@ sema_up (struct semaphore *sema)
   ASSERT (sema != NULL);
 
   old_level = intr_disable ();
+
   if (!list_empty (&sema->waiters)) {
     struct list_elem *maxsema = list_max (&sema->waiters, thread_comparator, NULL);
     list_remove (maxsema);
@@ -198,6 +199,10 @@ lock_init (struct lock *lock)
 void
 lock_acquire (struct lock *lock)
 {
+  
+  // disabled
+  enum intr_level old_level = intr_disable();
+
   ASSERT (lock != NULL);
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
@@ -206,6 +211,20 @@ lock_acquire (struct lock *lock)
   sema_down (&lock->semaphore);
 
   lock->holder = thread_current ();
+
+
+  struct thread *current_thread = thread_current();
+  lock->holder = thread_current();
+  // current_thread->curry_lock = NULL;
+  // list_push_back(&current_thread->thread_locklist, &lock->locklock);
+  // if (fix_compare(current_thread->priority, lock->highestwaitprio) == -1)
+  //   current_thread->priority = lock->highestwaitprio;
+
+
+
+
+  //bring back undisable
+  intr_set_level (old_level);
 }
 
 /* Tries to acquires LOCK and returns true if successful or false
@@ -217,6 +236,7 @@ lock_acquire (struct lock *lock)
 bool
 lock_try_acquire (struct lock *lock)
 {
+  
   bool success;
 
   ASSERT (lock != NULL);
@@ -236,11 +256,18 @@ lock_try_acquire (struct lock *lock)
 void
 lock_release (struct lock *lock)
 {
+  enum intr_level old_level = intr_disable();
+
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);
+
+  intr_set_level(old_level);
+  if (old_level == INTR_ON)
+    thread_yield ();
+  
 }
 
 /* Returns true if the current thread holds LOCK, false
