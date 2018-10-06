@@ -120,9 +120,8 @@ sema_up (struct semaphore *sema)
     thread_unblock (new_thread);
   }
   sema->value++;
-  intr_set_level (old_level);
-
   thread_yield();
+  intr_set_level (old_level);
 }
 
 static void sema_test_helper (void *sema_);
@@ -215,7 +214,6 @@ lock_acquire (struct lock *lock)
     if (thread_receiving_donation != NULL) {
       if (fix_compare(thread_receiving_donation->priority, temp->priority) == -1) {
         thread_receiving_donation->priority = temp->priority;
-        thread_cond_yield();
       }
     }
     temp = thread_receiving_donation;
