@@ -92,6 +92,10 @@ struct thread
     int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
 
+    //MLFQS
+    int nice; //niceness value of the thread
+    fixed_point_t recent_cpu; //recent_cpu value of thread
+
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
@@ -139,5 +143,7 @@ int thread_get_nice (void);
 void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
+
+void add_thread_to_queue(struct thread *t);
 
 #endif /* threads/thread.h */
