@@ -201,6 +201,10 @@ thread_create (const char *name, int priority,
   /* Add to run queue. */
   thread_unblock (t);
 
+  if (fix_compare(t->priority, thread_current()->priority) == 1) {
+    thread_yield();
+  }
+
   return tid;
 }
 
@@ -326,7 +330,7 @@ thread_foreach (thread_action_func *func, void *aux)
   for (e = list_begin (&all_list); e != list_end (&all_list);
        e = list_next (e))
     {
-      struct thread *t = 	 (e, struct thread, allelem);
+      struct thread *t = list_entry(e, struct thread, allelem);
       func (t, aux);
     }
 }
@@ -467,7 +471,6 @@ init_thread (struct thread *t, const char *name, int priority)
 
   //want to set our added features
   t->bpriority =  fix_int (priority);
-  t->donators = 
 
   t->magic = THREAD_MAGIC;
 
@@ -513,7 +516,7 @@ next_thread_to_run (void)
 //                  from ../../threads/thread.c:1:
 // ../../lib/kernel/list.h:178:19: note: expected ‘_Bool (*)(const struct list_elem *, const struct list_elem *, void *)’ but argument is of type ‘_Bool (*)(struct list_elem *, struct list_elem *, void *)’
 
-bool thread_comparator(const struct list_elem *a, const struct list_elem *b, void *aux) {
+bool thread_comparator(const struct list_elem *a, const struct list_elem *b, UNUSED void *aux) {
 	struct thread *thread1 = list_entry(a, struct thread, elem);
 	struct thread *thread2 = list_entry(b, struct thread, elem);
 	int retval = fix_compare (thread1->priority, thread2->priority) == -1; 

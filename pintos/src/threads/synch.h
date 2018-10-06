@@ -29,6 +29,8 @@ struct lock
     struct list_elem locklist;
   };
 
+bool sema_elem_less(const struct list_elem *a, const struct list_elem *b, void *aux);
+
 void lock_init (struct lock *);
 void lock_acquire (struct lock *);
 bool lock_try_acquire (struct lock *);

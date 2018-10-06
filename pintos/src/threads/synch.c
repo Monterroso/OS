@@ -118,8 +118,9 @@ sema_up (struct semaphore *sema)
     list_remove (maxsema);
     struct thread * new_thread = list_entry(maxsema, struct thread, elem);
     thread_unblock (new_thread);
-    if (fixed_compare(new_thread->priority, thread_current()->priority) == 1)
-      thread_yield();
+    if (fix_compare(new_thread->priority, thread_current()->priority) == 1) {
+      //thread_yield();
+    }
   }
   sema->value++;
   intr_set_level (old_level);
@@ -263,7 +264,7 @@ struct semaphore_elem
     struct semaphore semaphore;         /* This semaphore. */
   };
 
-bool sema_elem_less(const struct list_elem *a, const struct list_elem *b, void *aux) {
+bool sema_elem_less(const struct list_elem *a, const struct list_elem *b, UNUSED void *aux) {
 	struct semaphore_elem *sema1 = list_entry(a, struct semaphore_elem, elem);
 	struct semaphore_elem *sema2 = list_entry(b, struct semaphore_elem, elem);
   struct thread * thread1 = list_entry(list_begin(&((sema1->semaphore).waiters)), struct thread, elem);
@@ -336,7 +337,7 @@ cond_signal (struct condition *cond, struct lock *lock UNUSED)
   ASSERT (lock_held_by_current_thread (lock));
 
   if (!list_empty (&(cond->waiters))) {
-    struc semaphore_elem * sema = list_entry(list_max(&cond->waiters, &sema_elem_less, NULL), struct semaphore_elem, elem);
+    struct semaphore_elem * sema = list_entry(list_max(&cond->waiters, &sema_elem_less, NULL), struct semaphore_elem, elem);
     list_remove(&(sema->elem));
     sema_up (&(sema->semaphore));
   }
