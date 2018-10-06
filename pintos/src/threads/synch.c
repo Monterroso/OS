@@ -197,7 +197,6 @@ lock_init (struct lock *lock)
 void
 lock_acquire (struct lock *lock)
 {
-
   // disabled
   enum intr_level old_level = intr_disable();
 
@@ -224,6 +223,7 @@ lock_acquire (struct lock *lock)
   //in sema_down, we will assign the weights.
   sema_down (&lock->semaphore);
 
+  thread_get_donation();
   curr->acquiring_lock = NULL;
 
   lock->holder = curr;
@@ -252,29 +252,16 @@ lock_try_acquire (struct lock *lock)
   if (success) {
     struct thread * curr = thread_current();
     lock->holder = curr;
+    thread_get_donation();
     list_push_back(&(curr->held_lock_list), &(lock->held_elem));
   }
   return success;
 }
 
-/* Releases LOCK, which must be owned by the current thread.
-
-   An interrupt handler cannot acquire a lock, so it does not
-   make sense to try to release a lock within an interrupt
-   handler. */
+/* Loop for finding new donation after releasing or acquiring a lock */
 void
-lock_release (struct lock *lock)
+thread_get_donation ()
 {
-  enum intr_level old_level = intr_disable();
-
-  ASSERT (lock != NULL);
-  ASSERT (lock_held_by_current_thread (lock));
-
-  list_remove(&(lock->held_elem));
-  lock->holder = NULL;
-
-
-  /* Loop for finding new donation after releasing lock */
   struct thread * curr = thread_current();
   struct list_elem * next_lock_node = list_begin(&(curr->held_lock_list));
   fixed_point_t max_priority = curr->base_priority;
@@ -297,6 +284,26 @@ lock_release (struct lock *lock)
   }
 
   curr->priority = max_priority;
+}
+
+
+/* Releases LOCK, which must be owned by the current thread.
+
+   An interrupt handler cannot acquire a lock, so it does not
+   make sense to try to release a lock within an interrupt
+   handler. */
+void
+lock_release (struct lock *lock)
+{
+  enum intr_level old_level = intr_disable();
+
+  ASSERT (lock != NULL);
+  ASSERT (lock_held_by_current_thread (lock));
+
+  list_remove(&(lock->held_elem));
+  lock->holder = NULL;
+
+  thread_get_donation();
 
   sema_up (&lock->semaphore);
 
