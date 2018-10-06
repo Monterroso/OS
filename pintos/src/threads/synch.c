@@ -267,7 +267,7 @@ thread_get_donation ()
   struct list_elem * next_lock_node = list_begin(&(curr->held_lock_list));
   fixed_point_t max_priority = curr->base_priority;
 
-  /*while (next_lock_node != list_end(&(curr->held_lock_list))) {
+  while (next_lock_node != list_end(&(curr->held_lock_list))) {
     struct lock * next_lock = list_entry(next_lock_node, struct lock, held_elem);
     struct list * waiters = &((next_lock->semaphore).waiters);
 
@@ -281,7 +281,7 @@ thread_get_donation ()
       }
     }
     next_lock_node = list_next(next_lock_node);
-  }*/
+  }
 
   curr->priority = max_priority;
   thread_cond_yield();

@@ -356,7 +356,6 @@ thread_set_priority (int new_priority)
   if (fix_compare(curr->base_priority, curr->priority) == 1) {
     curr->priority = curr->base_priority;
   }
-
   thread_cond_yield();
 }
 
@@ -541,12 +540,6 @@ bool thread_comparator(const struct list_elem *a, const struct list_elem *b, UNU
 	int retval = fix_compare (thread1->priority, thread2->priority) == -1;
 	return retval;
 }
-// bool thread_comparator(struct list_elem *a, struct list_elem *b) {
-// 	struct thread *thread1 = list_entry(a, struct thread, elem);
-// 	struct thread *thread2 = list_entry(b, struct thread, elem);
-// 	int retval = fix_compare (thread1->priority, thread2->priority) == -1;
-// 	return retval;
-// }
 
 /* Completes a thread switch by activating the new thread's page
    tables, and, if the previous thread is dying, destroying it.
