@@ -183,8 +183,6 @@ lock_init (struct lock *lock)
   ASSERT (lock != NULL);
 
   lock->holder = NULL;
-  //init to 0
-  lock->highestwaitprio = fix_int(0);
   sema_init (&lock->semaphore, 1);
 }
 
@@ -216,7 +214,7 @@ lock_acquire (struct lock *lock)
   while (temp->acquiring_lock != NULL) {
     thread_receiving_donation = temp->acquiring_lock->holder;
     if (thread_receiving_donation != NULL) {
-      if (thread_receiving_donation->priority < temp->priority) {
+      if (fix_compare(thread_receiving_donation->priority, temp->priority) == -1) {
         thread_receiving_donation->priority = temp->priority;
       }
     }
@@ -251,10 +249,11 @@ lock_try_acquire (struct lock *lock)
   ASSERT (!lock_held_by_current_thread (lock));
 
   success = sema_try_down (&lock->semaphore);
-  if (success)
+  if (success) {
     struct thread * curr = thread_current();
     lock->holder = curr;
     list_push_back(&(curr->held_lock_list), &(lock->held_elem));
+  }
   return success;
 }
 
@@ -282,10 +281,11 @@ lock_release (struct lock *lock)
 
   while (next_lock_node != list_end(&(curr->held_lock_list))) {
     struct lock * next_lock = list_entry(next_lock_node, struct lock, held_elem);
-    struct list * waiters = &(next_lock->semaphore->waiters);
+    struct list * waiters = &((next_lock->semaphore).waiters);
 
     if (!list_empty(waiters)) {
-      struct list_elem * max_thread = list_max (waiters, thread_comparator, NULL);
+      struct list_elem * max_thread_node = list_max (waiters, thread_comparator, NULL);
+      struct thread * max_thread = list_entry(max_thread_node, struct thread, elem);
       fixed_point_t thread_priority = max_thread->priority;
 
       if(fix_compare(max_priority, thread_priority) == -1) {
@@ -293,7 +293,7 @@ lock_release (struct lock *lock)
       }
     }
 
-    next_lock_node = list_next(&(curr->held_lock_list));
+    next_lock_node = list_next(next_lock_node);
   }
 
   curr->priority = max_priority;

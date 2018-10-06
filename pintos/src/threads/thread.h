@@ -105,7 +105,6 @@ struct thread
 
     struct list held_lock_list;// held locks
     struct lock * acquiring_lock;
-  }
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */

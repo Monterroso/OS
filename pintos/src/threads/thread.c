@@ -92,7 +92,6 @@ thread_init (void)
   lock_init (&tid_lock);
   list_init (&ready_list);
   list_init (&all_list);
-  list_init (&held_lock_list);
 
   /* Set up a thread structure for the running thread. */
   initial_thread = running_thread ();
@@ -198,6 +197,8 @@ thread_create (const char *name, int priority,
   sf = alloc_frame (t, sizeof *sf);
   sf->eip = switch_entry;
   sf->ebp = 0;
+
+  list_init (&(t->held_lock_list));
 
   /* Add to run queue. */
   thread_unblock (t);
@@ -343,7 +344,7 @@ thread_set_priority (int new_priority)
   struct thread * curr = thread_current();
   curr->base_priority = fix_int(new_priority);
   if (fix_compare(curr->base_priority, curr->priority) == 1) {
-    curr->priority = curr->base_priority
+    curr->priority = curr->base_priority;
   }
 }
 
