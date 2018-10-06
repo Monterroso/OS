@@ -27,13 +27,11 @@ typedef int tid_t;
 #define PRI_MAX 63                      /* Highest priority. */
 
 /* A kernel thread or user process.
-
    Each thread structure is stored in its own 4 kB page.  The
    thread structure itself sits at the very bottom of the page
    (at offset 0).  The rest of the page is reserved for the
    thread's kernel stack, which grows downward from the top of
    the page (at offset 4 kB).  Here's an illustration:
-
         4 kB +---------------------------------+
              |          kernel stack           |
              |                |                |
@@ -55,22 +53,18 @@ typedef int tid_t;
              |               name              |
              |              status             |
         0 kB +---------------------------------+
-
    The upshot of this is twofold:
-
       1. First, `struct thread' must not be allowed to grow too
          big.  If it does, then there will not be enough room for
          the kernel stack.  Our base `struct thread' is only a
          few bytes in size.  It probably should stay well under 1
          kB.
-
       2. Second, kernel stacks must not be allowed to grow too
          large.  If a stack overflows, it will corrupt the thread
          state.  Thus, kernel functions should not allocate large
          structures or arrays as non-static local variables.  Use
          dynamic allocation with malloc() or palloc_get_page()
          instead.
-
    The first symptom of either of these problems will probably be
    an assertion failure in thread_current(), which checks that
    the `magic' member of the running thread's `struct thread' is
@@ -89,15 +83,26 @@ struct thread
     enum thread_status status;          /* Thread state. */
     char name[16];                      /* Name (for debugging purposes). */
     uint8_t *stack;                     /* Saved stack pointer. */
-    int priority;                       /* Priority. */
+    // int priority;                       /* Priority. */
     struct list_elem allelem;           /* List element for all threads list. */
+
+    /* Shared between thread.c and synch.c. */
+    struct list_elem elem;              /* List element. */
+
+    /* Used for lists in timer.c */
+    struct list_elem timer_elem;
+    int sleep_time;
+
+    //John Part 2
+    fixed_point_t priority;
+    fixed_point_t base_priority;
 
     //MLFQS
     int nice; //niceness value of the thread
     fixed_point_t recent_cpu; //recent_cpu value of thread
 
-    /* Shared between thread.c and synch.c. */
-    struct list_elem elem;              /* List element. */
+    struct list held_lock_list;// held locks
+    struct lock * acquiring_lock;
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
@@ -132,9 +137,17 @@ const char *thread_name (void);
 void thread_exit (void) NO_RETURN;
 void thread_yield (void);
 
+
+// helper
+bool thread_comparator(const struct list_elem *a, const struct list_elem *b, void *aux);
+// bool thread_comparator(struct list_elem *a, struct list_elem *b, void *aux);
+
+
 /* Performs some operation on thread t, given auxiliary data AUX. */
 typedef void thread_action_func (struct thread *t, void *aux);
 void thread_foreach (thread_action_func *, void *);
+
+void thread_cond_yield (void);
 
 int thread_get_priority (void);
 void thread_set_priority (int);
@@ -144,6 +157,5 @@ void thread_set_nice (int);
 int thread_get_recent_cpu (void);
 int thread_get_load_avg (void);
 
-void add_thread_to_queue(struct thread *t);
 
 #endif /* threads/thread.h */
