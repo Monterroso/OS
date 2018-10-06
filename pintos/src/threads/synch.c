@@ -282,7 +282,6 @@ thread_get_donation ()
   }
 
   curr->priority = max_priority;
-  thread_cond_yield();
 }
 
 
@@ -307,8 +306,6 @@ lock_release (struct lock *lock)
   sema_up (&lock->semaphore);
 
   intr_set_level(old_level);
-  //if (old_level == INTR_ON)
-  //  thread_yield ();
 }
 
 /* Returns true if the current thread holds LOCK, false

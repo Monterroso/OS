@@ -354,10 +354,7 @@ thread_set_priority (int new_priority)
   struct thread * curr = thread_current();
   curr->base_priority = fix_int(new_priority);
   thread_get_donation();
-  /*if (fix_compare(curr->base_priority, curr->priority) == 1) {
-    curr->priority = curr->base_priority;
-  }
-  thread_cond_yield();*/
+  thread_cond_yield();
 }
 
 /* Returns the current thread's priority. */
