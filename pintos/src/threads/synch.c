@@ -210,8 +210,8 @@ lock_acquire (struct lock *lock)
   /* Loop for recursive priority donation */
   struct thread * temp = curr;
   struct thread * thread_receiving_donation;
-  while (temp->acquiring_lock != NULL) {
-    thread_receiving_donation = temp->acquiring_lock->holder;
+  while (temp->acquiring_lock != NULL && (temp->acquiring_lock)->holder != NULL) {
+    thread_receiving_donation = (temp->acquiring_lock)->holder;
     if (thread_receiving_donation != NULL) {
       if (fix_compare(thread_receiving_donation->priority, temp->priority) == -1) {
         thread_receiving_donation->priority = temp->priority;
@@ -267,7 +267,7 @@ thread_get_donation ()
   struct list_elem * next_lock_node = list_begin(&(curr->held_lock_list));
   fixed_point_t max_priority = curr->base_priority;
 
-  while (next_lock_node != list_end(&(curr->held_lock_list))) {
+  /*while (next_lock_node != list_end(&(curr->held_lock_list))) {
     struct lock * next_lock = list_entry(next_lock_node, struct lock, held_elem);
     struct list * waiters = &((next_lock->semaphore).waiters);
 
@@ -281,7 +281,7 @@ thread_get_donation ()
       }
     }
     next_lock_node = list_next(next_lock_node);
-  }
+  }*/
 
   curr->priority = max_priority;
   thread_cond_yield();
