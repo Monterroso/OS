@@ -215,6 +215,7 @@ lock_acquire (struct lock *lock)
     if (thread_receiving_donation != NULL) {
       if (fix_compare(thread_receiving_donation->priority, temp->priority) == -1) {
         thread_receiving_donation->priority = temp->priority;
+        thread_cond_yield();
       }
     }
     temp = thread_receiving_donation;
@@ -279,11 +280,11 @@ thread_get_donation ()
         max_priority = thread_priority;
       }
     }
-
     next_lock_node = list_next(next_lock_node);
   }
 
   curr->priority = max_priority;
+  thread_cond_yield();
 }
 
 

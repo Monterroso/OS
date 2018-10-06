@@ -337,6 +337,18 @@ thread_foreach (thread_action_func *func, void *aux)
     }
 }
 
+/* Yields the cpu if a thread on the ready queue has a higher
+   priority than the current thread */
+void
+thread_cond_yield () {
+  struct thread * curr = thread_current();
+  struct list_elem * max_thread_node = list_max(&ready_list, thread_comparator, NULL);
+  struct thread * max_thread = list_entry(max_thread_node, struct thread, elem);
+  if (fix_compare(curr->priority, max_thread->priority) == 1) {
+    thread_yield();
+  }
+}
+
 /* Sets the current thread's priority to NEW_PRIORITY. */
 void
 thread_set_priority (int new_priority)
@@ -346,6 +358,8 @@ thread_set_priority (int new_priority)
   if (fix_compare(curr->base_priority, curr->priority) == 1) {
     curr->priority = curr->base_priority;
   }
+
+  thread_cond_yield();
 }
 
 /* Returns the current thread's priority. */
