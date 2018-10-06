@@ -95,6 +95,10 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
+    /* Used for lists in timer.c */
+    struct list_elem timer_elem;
+    int sleep_time;
+
     //John Part 2
     fixed_point_t priority;
     fixed_point_t bpriority;
