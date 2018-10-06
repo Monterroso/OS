@@ -221,13 +221,13 @@ lock_acquire (struct lock *lock)
     temp = thread_receiving_donation;
   }
 
-  //in sema_down, we will assign the weights.
   sema_down (&lock->semaphore);
 
   thread_get_donation();
   curr->acquiring_lock = NULL;
 
   lock->holder = curr;
+
   list_push_back(&(curr->held_lock_list), &(lock->held_elem));
 
   //bring back undisable
@@ -332,12 +332,12 @@ struct semaphore_elem
   };
 
 bool sema_elem_less(const struct list_elem *a, const struct list_elem *b, UNUSED void *aux) {
-	struct semaphore_elem *sema1 = list_entry(a, struct semaphore_elem, elem);
-	struct semaphore_elem *sema2 = list_entry(b, struct semaphore_elem, elem);
+  struct semaphore_elem *sema1 = list_entry(a, struct semaphore_elem, elem);
+  struct semaphore_elem *sema2 = list_entry(b, struct semaphore_elem, elem);
   struct thread * thread1 = list_entry(list_begin(&((sema1->semaphore).waiters)), struct thread, elem);
   struct thread * thread2 = list_entry(list_begin(&((sema2->semaphore).waiters)), struct thread, elem);
-	int retval = fix_compare (thread1->priority, thread2->priority) == -1;
-	return retval;
+  int retval = fix_compare (thread1->priority, thread2->priority) == -1;
+  return retval;
 }
 
 /* Initializes condition variable COND.  A condition variable

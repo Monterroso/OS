@@ -198,8 +198,6 @@ thread_create (const char *name, int priority,
   sf->eip = switch_entry;
   sf->ebp = 0;
 
-  list_init (&(t->held_lock_list));
-
   /* Add to run queue. */
   thread_unblock (t);
 
@@ -494,6 +492,9 @@ init_thread (struct thread *t, const char *name, int priority)
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
+
+  list_init (&(t->held_lock_list));
+
   intr_set_level (old_level);
 }
 
