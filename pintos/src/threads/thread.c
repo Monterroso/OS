@@ -588,23 +588,13 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void)
 {
-  if (thread_mlfqs) {
-    int i;
-    for (i = 63; i >= 0; i--) {
-      if (!list_empty(&(mlfqs[i]))) {
-        return list_entry (list_pop_back(&(mlfqs[i])), struct thread, elem);
-      }
-    }
+  if (list_empty (&ready_list))
     return idle_thread;
-  } else {
-    if (list_empty (&ready_list))
-      return idle_thread;
-    else
-    {
-      struct list_elem *maxthread = list_max(&ready_list, thread_comparator, NULL);
-      list_remove(maxthread);
-      return list_entry (maxthread, struct thread, elem);
-    }
+  else
+  {
+    struct list_elem *maxthread = list_max(&ready_list, thread_comparator, NULL);
+    list_remove(maxthread);
+    return list_entry (maxthread, struct thread, elem);
   }
 }
 
@@ -708,7 +698,9 @@ void add_thread_to_queue(struct thread* t) {
     if (i > PRI_MAX) {
       i = PRI_MAX;
     }
-    list_push_front(&(mlfqs[i]), &t -> elem);
+    ASSERT(i >= PRI_MIN);
+    ASSERT(i <= PRI_MAX);
+    //list_push_front(&(mlfqs[i]), &t -> elem);
   }
 }
 /* Offset of `stack' member within `struct thread'.
