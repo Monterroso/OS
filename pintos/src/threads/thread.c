@@ -96,15 +96,6 @@ thread_init (void)
   list_init (&ready_list);
   list_init (&all_list);
 
-  /* Set up a thread structure for the running thread. */
-  initial_thread = running_thread ();
-  init_thread (initial_thread, "main", PRI_DEFAULT);
-  initial_thread->status = THREAD_RUNNING;
-  initial_thread->tid = allocate_tid ();
-
-  initial_thread->nice = 0;
-  initial_thread->recent_cpu = fix_int(0);
-
   //Set up for MLFQS (task3)
   if (thread_mlfqs) {
     ready_threads = 0;
@@ -115,8 +106,17 @@ thread_init (void)
     }
     // list_push_front(&mlfqs[-1], &initial_thread->elem);
     // list_pop_back(&mlfqs[-1]);
-
   }
+
+  /* Set up a thread structure for the running thread. */
+  initial_thread = running_thread ();
+
+  initial_thread->nice = 0;
+  initial_thread->recent_cpu = fix_int(0);
+
+  init_thread (initial_thread, "main", PRI_DEFAULT);
+  initial_thread->status = THREAD_RUNNING;
+  initial_thread->tid = allocate_tid ();
 }
 
 /* Starts preemptive thread scheduling by enabling interrupts.
@@ -141,12 +141,19 @@ thread_start (void)
 void
 thread_tick (void)
 {
+
   struct thread *t = thread_current ();
   if (thread_mlfqs) {
       if (timer_ticks() % 100 == 0) {
         load_avg = fix_add(fix_mul(fix_frac(59,60), load_avg),
           fix_scale(fix_frac(1,60), ready_threads));
         struct list_elem *e;
+
+        int i;
+        for (i = 0; i < 64; i++ ) {
+          list_init(&(mlfqs[i]));
+        }
+
         for (e = list_begin (&all_list); e != list_end (&all_list);
              e = list_next (e)) {
           struct thread *t = list_entry (e, struct thread, allelem);
@@ -280,6 +287,7 @@ thread_block (void)
   if (running_thread() != idle_thread) {
     ready_threads--;
   }
+
   thread_current ()->status = THREAD_BLOCKED;
   schedule ();
 }
@@ -298,14 +306,15 @@ thread_unblock (struct thread *t)
 
   ASSERT (is_thread (t));
 
+
+  old_level = intr_disable ();
+  ASSERT (t->status == THREAD_BLOCKED);
+  
   //For MLFPQS task3
   if (thread_mlfqs) {
     ready_threads++;
     add_thread_to_queue(t);
   }
-
-  old_level = intr_disable ();
-  ASSERT (t->status == THREAD_BLOCKED);
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
@@ -696,12 +705,14 @@ allocate_tid (void)
 void add_thread_to_queue(struct thread* t) {
   if (t != idle_thread && thread_mlfqs) {
     int i = fix_round(fix_mul(t->base_priority, fix_frac(64, PRI_MAX)));
+
     if (i < PRI_MIN) {
       i = PRI_MIN;
     }
     if (i > PRI_MAX) {
       i = PRI_MAX;
     }
+
     list_push_front(&mlfqs[i], &t -> mlfqs_elem);
   }
 }
