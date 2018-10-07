@@ -32,7 +32,6 @@ static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
 static struct list sleeping_threads;
-static struct list waiting_for_free_threads;
 
 /* Initializes SLEEPING_THREADS.
    Sets up the timer to interrupt TIMER_FREQ times per second,
@@ -41,7 +40,6 @@ void
 timer_init (void)
 {
   list_init(&sleeping_threads);
-  list_init(&waiting_for_free_threads);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -91,17 +89,6 @@ timer_elapsed (int64_t then)
   return timer_ticks () - then;
 }
 
-/* Frees left over nodes that have already woken up */
-void
-timer_free_nodes () {
-  struct list_elem * elem = list_begin(&waiting_for_free_threads);
-  while (elem != list_end(&waiting_for_free_threads)) {
-    sleep_node * node = list_entry(elem, sleep_node, elem);
-    elem = list_remove(elem);
-    free(node);
-  }
-}
-
 /* Sleeps for approximately TICKS timer ticks.  Interrupts must
    be turned on. */
 void
@@ -113,18 +100,15 @@ timer_sleep (int64_t ticks)
 
 
   /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
-  sleep_node * node = malloc(sizeof(sleep_node));
-  node->time_remaining = ticks;
-  node->blocked_thread = thread_current();
+  struct thread * node = thread_current();
+  node->sleep_time = ticks;
 
   /* Adds the current thread to the list of sleeping threads */
-  list_push_back(&sleeping_threads, &(node->elem));
+  list_push_back(&sleeping_threads, &(node->timer_elem));
 
   intr_disable();
   thread_block();
   intr_enable();
-
-  timer_free_nodes();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -201,24 +185,19 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
-  //ticks++;
-  //thread_tick ();
-
   enum intr_level old_level;
 
   struct list_elem * elem = list_begin(&sleeping_threads);
   while (elem != list_end(&sleeping_threads)) {
-    sleep_node * node = list_entry(elem, sleep_node, elem);
-    node->time_remaining -= 1;
+    struct thread * node = list_entry(elem, struct thread, timer_elem);
+    node->sleep_time -= 1;
 
-    if (node->time_remaining == 0)  {
+    if (node->sleep_time == 0)  {
       old_level = intr_disable();
-      thread_unblock(node->blocked_thread);
+      thread_unblock(node);
       intr_set_level(old_level);
 
-      struct list_elem * temp = list_remove(elem);
-      list_push_back(&waiting_for_free_threads, elem);
-      elem = temp;
+      elem = list_remove(elem);
     } else {
       elem = list_next(elem);
     }

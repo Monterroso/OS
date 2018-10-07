@@ -414,7 +414,7 @@ thread_cond_yield () {
   struct thread * curr = thread_current();
   struct list_elem * max_thread_node = list_max(&ready_list, thread_comparator, NULL);
   struct thread * max_thread = list_entry(max_thread_node, struct thread, elem);
-  if (fix_compare(curr->priority, max_thread->priority) == 1) {
+  if (fix_compare(curr->priority, max_thread->priority) == -1) {
     thread_yield();
   }
 }
@@ -425,9 +425,7 @@ thread_set_priority (int new_priority)
 {
   struct thread * curr = thread_current();
   curr->base_priority = fix_int(new_priority);
-  if (fix_compare(curr->base_priority, curr->priority) == 1) {
-    curr->priority = curr->base_priority;
-  }
+  thread_get_donation();
   thread_cond_yield();
 }
 
@@ -608,10 +606,6 @@ next_thread_to_run (void)
   }
 }
 
-//ty OH
-// In file included from ../../threads/thread.h:5:0,
-//                  from ../../threads/thread.c:1:
-// ../../lib/kernel/list.h:178:19: note: expected ‘_Bool (*)(const struct list_elem *, const struct list_elem *, void *)’ but argument is of type ‘_Bool (*)(struct list_elem *, struct list_elem *, void *)’
 
 bool thread_comparator(const struct list_elem *a, const struct list_elem *b, UNUSED void *aux) {
 	struct thread *thread1 = list_entry(a, struct thread, elem);
