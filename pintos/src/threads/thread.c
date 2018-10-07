@@ -155,13 +155,13 @@ thread_tick (void)
               fix_add(fix_scale(load_avg, 2),
               fix_int(1))), t->recent_cpu), fix_int(t->nice));
 
-            t->priority = fix_int(PRI_MAX - (t->nice * 2) -
+            t->base_priority = fix_int(PRI_MAX - (t->nice * 2) -
               fix_round(fix_div(t->recent_cpu, fix_int(4))));
-            if (fix_trunc(t->priority) < PRI_MIN) {
-              t->priority = fix_int(PRI_MIN);
+            if (fix_trunc(t->base_priority) < PRI_MIN) {
+              t->base_priority = fix_int(PRI_MIN);
             }
-            if (fix_trunc(t->priority) > PRI_MAX) {
-              t->priority = fix_int(PRI_MAX);
+            if (fix_trunc(t->base_priority) > PRI_MAX) {
+              t->base_priority = fix_int(PRI_MAX);
             }
             if (t->status == THREAD_READY) {
               add_thread_to_queue(t);
@@ -174,13 +174,13 @@ thread_tick (void)
         fix_int(1));
 
       if (timer_ticks() % 4 == 0 ) {
-        t->priority = fix_int(PRI_MAX - (t->nice * 2) -
+        t->base_priority = fix_int(PRI_MAX - (t->nice * 2) -
           fix_round(fix_div(t->recent_cpu, fix_int(4))));
-        if (fix_trunc(t->priority) < PRI_MIN) {
-          t->priority = fix_int(PRI_MIN);
+        if (fix_trunc(t->base_priority) < PRI_MIN) {
+          t->base_priority = fix_int(PRI_MIN);
         }
-        if (fix_trunc(t->priority) > PRI_MAX) {
-          t->priority = fix_int(PRI_MAX);
+        if (fix_trunc(t->base_priority) > PRI_MAX) {
+          t->base_priority = fix_int(PRI_MAX);
         }
       }
     }
@@ -588,13 +588,23 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void)
 {
-  if (list_empty (&ready_list))
+  if (thread_mlfqs) {
+    int i;
+    for (i = 63; i >= 0; i--) {
+      if (!list_empty(&(mlfqs[i]))) {
+        return list_entry (list_pop_back(&(mlfqs[i])), struct thread, mlfqs_elem);
+      }
+    }
     return idle_thread;
-  else
-  {
-    struct list_elem *maxthread = list_max(&ready_list, thread_comparator, NULL);
-    list_remove(maxthread);
-    return list_entry (maxthread, struct thread, elem);
+  } else {
+    if (list_empty (&ready_list))
+      return idle_thread;
+    else
+    {
+      struct list_elem *maxthread = list_max(&ready_list, thread_comparator, NULL);
+      list_remove(maxthread);
+      return list_entry (maxthread, struct thread, elem);
+    }
   }
 }
 
@@ -691,16 +701,14 @@ allocate_tid (void)
 
 void add_thread_to_queue(struct thread* t) {
   if (t != idle_thread && thread_mlfqs) {
-    int i = fix_round(fix_mul(t->priority, fix_frac(64, PRI_MAX)));
+    int i = fix_round(fix_mul(t->base_priority, fix_frac(64, PRI_MAX)));
     if (i < PRI_MIN) {
       i = PRI_MIN;
     }
     if (i > PRI_MAX) {
       i = PRI_MAX;
     }
-    ASSERT(i >= PRI_MIN);
-    ASSERT(i <= PRI_MAX);
-    //list_push_front(&(mlfqs[i]), &t -> elem);
+    list_push_front(&mlfqs[i], &t -> mlfqs_elem);
   }
 }
 /* Offset of `stack' member within `struct thread'.
