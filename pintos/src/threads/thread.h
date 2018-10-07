@@ -100,6 +100,7 @@ struct thread
     //MLFQS
     int nice; //niceness value of the thread
     fixed_point_t recent_cpu; //recent_cpu value of thread
+    struct list_elem mlfqs_elem;
 
     struct list held_lock_list;// held locks
     struct lock * acquiring_lock;
