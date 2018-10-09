@@ -13,9 +13,13 @@ Second, we did not need to write our own max heap structure or functions.  After
 # Task 3:
 
 ## Contributions
-Noah Poole: Completed Task 1, helped code Task 2 and debug Task 3.
-Marcus:
-Johnathan:
-William:
+**Noah Poole**: Completed Task 1, helped code Task 2 and debug Task 3.
+
+**Marcus**:
+
+**Johnathan**:
+
+**William**:
+
 
 The group did a good job of discussing and debating the merits of various designs.  We all helped each other debug difficult problems.  In retrospect, splitting the work into tasks was not ideal, and we all should have worked together on every task.  This would have helped us understand every element of the project and spot issues earlier on.
