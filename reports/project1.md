@@ -8,6 +8,12 @@ There were two changes we made to our design for Task 1.
 - Second, we did not need to write our own max heap structure or functions.  After reviewing the skeleton code, we found list_max adequately filled our needs; the linear search time had no noticeable impact on our code's performance.
 
 # Task 2:
+There were two changes we made to our design for Task 2.  
+
+1. We decided not to give a lock a priority and just calculated from the thread's list
+2. In our design doc, we did not have a waiting on lock variable so we had to add it in. 
+
+Aside from that everything was generally the same as described in the design doc.
 
 # Task 3:
 
@@ -16,7 +22,7 @@ There were two changes we made to our design for Task 1.
 
 **Marcus**:
 
-**Johnathan**:
+**Johnathan**: Debugging: Task2 wasnt working and found that it was in task 1(debugging), also debugged test in 2 and in 3
 
 **William**:
 
