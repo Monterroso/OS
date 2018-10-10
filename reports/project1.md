@@ -21,7 +21,7 @@ There was only one main change we made to our design. We added the method add_th
 ## Contributions
 **Noah Poole**: Completed Task 1, helped code Task 2 and debug Task 3.
 
-**Marcus**:
+**Marcus**: Mainly helped debug Task 2 and plan out test cases and our implimentation.
 
 **Johnathan**: Debugging: Task2 wasnt working and found that it was in task 1(debugging), also debugged test in 2 and in 3
 
