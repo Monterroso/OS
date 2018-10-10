@@ -16,6 +16,7 @@ There were two changes we made to our design for Task 2.
 Aside from that everything was generally the same as described in the design doc.
 
 # Task 3:
+There was only one main change we made to our design. We added the method add_thread_to_queue to add a thread that is ready into the mlfqs. During the writing of the design doc, we did not take into account that there would be multiple different points in which we'd add a thread to the queue, thus creating this method would make coding more convenient. 
 
 ## Contributions
 **Noah Poole**: Completed Task 1, helped code Task 2 and debug Task 3.
@@ -24,7 +25,7 @@ Aside from that everything was generally the same as described in the design doc
 
 **Johnathan**: Debugging: Task2 wasnt working and found that it was in task 1(debugging), also debugged test in 2 and in 3
 
-**William**:
+**William**: Implemented Task 3 and helped debug Task 3.
 
 
 The group did a good job of discussing and debating the merits of various designs.  We all helped each other debug difficult problems.  In retrospect, splitting the work into tasks was not ideal, and we all should have worked together on every task.  This would have helped us understand every element of the project and spot issues earlier on.
