@@ -7,7 +7,6 @@
 #include "threads/interrupt.h"
 #include "threads/synch.h"
 #include "threads/thread.h"
-#include "threads/malloc.h"
 
 /* See [8254] for hardware details of the 8254 timer chip. */
 
@@ -31,15 +30,11 @@ static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
 
-static struct list sleeping_threads;
-
-/* Initializes SLEEPING_THREADS.
-   Sets up the timer to interrupt TIMER_FREQ times per second,
+/* Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
 timer_init (void)
 {
-  list_init(&sleeping_threads);
   pit_configure_channel (0, 2, TIMER_FREQ);
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
 }
@@ -94,21 +89,11 @@ timer_elapsed (int64_t then)
 void
 timer_sleep (int64_t ticks)
 {
+  int64_t start = timer_ticks ();
+
   ASSERT (intr_get_level () == INTR_ON);
-  if (ticks <= 0)
-    return;
-
-
-  /* Creates a sleep_node to store a pointer to the thread and it's remaining sleep time */
-  struct thread * node = thread_current();
-  node->sleep_time = ticks;
-
-  /* Adds the current thread to the list of sleeping threads */
-  list_push_back(&sleeping_threads, &(node->timer_elem));
-
-  intr_disable();
-  thread_block();
-  intr_enable();
+  while (timer_elapsed (start) < ticks)
+    thread_yield ();
 }
 
 /* Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -185,26 +170,8 @@ timer_print_stats (void)
 static void
 timer_interrupt (struct intr_frame *args UNUSED)
 {
-  enum intr_level old_level;
-
-  struct list_elem * elem = list_begin(&sleeping_threads);
-  while (elem != list_end(&sleeping_threads)) {
-    struct thread * node = list_entry(elem, struct thread, timer_elem);
-    node->sleep_time -= 1;
-
-    if (node->sleep_time == 0)  {
-      old_level = intr_disable();
-      thread_unblock(node);
-      intr_set_level(old_level);
-
-      elem = list_remove(elem);
-    } else {
-      elem = list_next(elem);
-    }
-  }
-
   ticks++;
-  thread_tick();
+  thread_tick ();
 }
 
 /* Returns true if LOOPS iterations waits for more than one timer
