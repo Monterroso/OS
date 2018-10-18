@@ -72,7 +72,7 @@ Should work because we will keep track of the exit_status and will be able to ru
 ### Rationale
 Decides to use semaphores to see if threads and memory are available. Also it would be nice to take advantage of semaphores to track processes. A list of children will allow the syscalls to keep track of the parent child relationships. We needed to check that the which runs first, whether its child or parent first.
 
-### Task 3
+# Task 3
 
 ## Data Structures and Functions
 ```
