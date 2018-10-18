@@ -151,6 +151,8 @@ One such place the tests are missing come from the lack of extensive testing by 
 
 #GDB Info#
 
+#Question 1#
+
 (gdb) info threads
   Id   Target Id         Frame
 * 1    Thread <main>     process_execute (file_name=file_name@entry=0xc0007d50 "
@@ -173,7 +175,30 @@ ce \357>, priority = 31, allelem = {prev = 0xc0034b50 <all_list>, next = 0xc0104
 = {prev = 0xc000e020, next = 0xc0034b58 <all_list+8>}, elem = {prev = 0xc0034b60
  <ready_list>, next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446325
 
+#Question 2#
 
+#0  process_execute (file_name=file_name@entry=0xc0007d50 "args-none") at ../../
+userprog/process.c:32
+
+tid_t
+process_execute (const char *file_name)
+{
+
+#1  0xc002025e in run_task (argv=0xc0034a0c <argv+12>) at ../../threads/init.c:2
+88
+/* Initialize ourselves as a thread so we can use locks,
+     then enable console locking. */
+  thread_init ();
+
+
+
+#2  0xc00208e4 in run_actions (argv=0xc0034a0c <argv+12>) at ../../threads/init.
+c:340
+#3  main () at ../../threads/init.c:133
+  /* Run actions specified on kernel command line. */
+  run_actions (argv);
+
+#Question 3#
 
 In thread main, file name at 0xc0109000
 
@@ -197,13 +222,24 @@ b60 <ready_list>, next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446
 
 Now there are three threads!
 
+#Question 4#
+
 It is created at line 55, specifically at static void start_process (void *file_name_)
 
+#Question 5#
+
 Crash caused at 0x0804870c
+
+#Question 6#
 
 #0  _start (argc=<error reading variable: can't compute CFA for this frame>, arg
 v=<error reading variable: can't compute CFA for this frame>) at ../../lib/user/
 entry.c:9
 (gdb)
+
+
+
+#Question 7#
+It can't get the frame
 
 
