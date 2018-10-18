@@ -160,48 +160,42 @@ thread is main, having id of 0xc0007d50
 
 Breakpoint 1, process_execute (file_name=file_name@entry=0xc0007d50 "args-none")
  at ../../userprog/process.c:32
-(gdb) dumplist &all_list thread allelem
-pintos-debug: dumplist #0: 0xc000e000 {tid = 1, status = THREAD_RUNNING, name =
+
+0xc000e000 {tid = 1, status = THREAD_RUNNING, name =
 "main", '\000' <repeats 11 times>, stack = 0xc000ee0c "\210", <incomplete sequen
 ce \357>, priority = 31, allelem = {prev = 0xc0034b50 <all_list>, next = 0xc0104
 020}, elem = {prev = 0xc0034b60 <ready_list>, next = 0xc0034b68 <ready_list+8>},
  pagedir = 0x0, magic = 3446325067}
-pintos-debug: dumplist #1: 0xc0104000 {tid = 2, status = THREAD_BLOCKED, name =
+
+
+0xc0104000 {tid = 2, status = THREAD_BLOCKED, name =
 "idle", '\000' <repeats 11 times>, stack = 0xc0104f34 "", priority = 0, allelem
 = {prev = 0xc000e020, next = 0xc0034b58 <all_list+8>}, elem = {prev = 0xc0034b60
  <ready_list>, next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446325
 
- (gdb) backtrace
-#0  process_execute (file_name=file_name@entry=0xc0007d50 "args-none") at ../../
-userprog/process.c:32
-#1  0xc002025e in run_task (argv=0xc0034a0c <argv+12>) at ../../threads/init.c:2
-88
-#2  0xc00208e4 in run_actions (argv=0xc0034a0c <argv+12>) at ../../threads/init.
-c:340
-#3  main () at ../../threads/init.c:133
-(gdb)
-
-(gdb) info threads
-  Id   Target Id         Frame
-* 1    Thread <main>     start_process (file_name_=0xc0109000) at ../../userprog
-/process.c:55
 
 
-(gdb) dumplist &all_list thread allelem
-pintos-debug: dumplist #0: 0xc000e000 {tid = 1, status = THREAD_BLOCKED, name =
+In thread main, file name at 0xc0109000
+
+
+0xc000e000 {tid = 1, status = THREAD_BLOCKED, name =
 "main", '\000' <repeats 11 times>, stack = 0xc000eebc "\001", priority = 31, all
 elem = {prev = 0xc0034b50 <all_list>, next = 0xc0104020}, elem = {prev = 0xc0036
 554 <temporary+4>, next = 0xc003655c <temporary+12>}, pagedir = 0x0, magic = 344
 6325067}
-pintos-debug: dumplist #1: 0xc0104000 {tid = 2, status = THREAD_BLOCKED, name =
+
+ 0xc0104000 {tid = 2, status = THREAD_BLOCKED, name =
 "idle", '\000' <repeats 11 times>, stack = 0xc0104f34 "", priority = 0, allelem
 = {prev = 0xc000e020, next = 0xc010a020}, elem = {prev = 0xc0034b60 <ready_list>
 , next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446325067}
-pintos-debug: dumplist #2: 0xc010a000 {tid = 3, status = THREAD_RUNNING, name =
+
+0xc010a000 {tid = 3, status = THREAD_RUNNING, name =
 "args-none\000\000\000\000\000\000", stack = 0xc010afd4 "", priority = 31, allel
 em = {prev = 0xc0104020, next = 0xc0034b58 <all_list+8>}, elem = {prev = 0xc0034
 b60 <ready_list>, next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446
 325067}
+
+Now there are three threads!
 
 It is created at line 55, specifically at static void start_process (void *file_name_)
 
