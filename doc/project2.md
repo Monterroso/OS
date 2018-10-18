@@ -74,4 +74,68 @@ Decides to use semaphores to see if threads and memory are available. Also it wo
 
 ### Task 3
 
+## Data Structures and Functions
+```
+process.c:
+process_execute (const char *file_name)
+Need to set `file_name` to read only
+
+file.c:
+struct file
+Add an int fd field to the struct
+
+syscall.c:
+struct lock file_lock
+Lock held by thread currently using file system
+
+struct file ** file_list
+Array of pointers to files currently opened by the thread
+
+syscall_handler (struct intr_frame *f UNUSED)
+Add calls to file syscall handlers when prompted
+
+bool create (const char *file, unsigned initial size)
+Lock, call filesys_create, and release if no files open
+
+bool remove (const char *file)
+Lock, call filesys_remove, and release if no files open
+
+int open (const char *file)
+Lock, call filesys_open, and add file to list
+
+int filesize (int fd)
+Call file_length
+
+int read (int fd, void *buffer, unsigned size)
+Call file_read or use input_getc() to read from stdin
+
+int write (int fd, const void *buffer, unsigned size)
+Call file_write or use putbuf() to write to stdout
+
+void seek (int fd, unsigned position)
+Call file_seek
+
+unsigned tell (int fd)
+Call file_tell
+
+void close (int fd)
+Call file_close
+```  
+## Algorithms
+Most of the syscalls can simply call their file.c and filesys.c equivalents.  The functions will use the file descriptor to lookup file structures in `file_list`, then pass those structs to the right functions.  Some functions require more code, notable `open`, `close`, `read`, and `write`.  `open` needs to also add the new file struct to `file_list` and assign it a unique file descriptor while `close` should remove the struct from the list.  `read` needs use `input_getc` if reading from stdin.  `write` needs to use `putbuf` if writing to stdout.
+
+## Synchronization
+The main form of synchronization will be a single global lock in the syscall.c file.  Any thread that calls a file syscall will acquire the lock.  As long as a thread has an open file, it will hold the lock.  Thus, `open()` will not release the lock unless the open fails.  When the lock is released at the end of any function, we first check that the current thread doesn't have any open files.
+
+## Rationale
+### Advantages
+- A single lock lends easy implementation and abstraction
+- Calling functions from file.c and filesys.c is hard to mess up
+- Adding `fd` to the `struct file` allows for easy tracking of file descriptors
+
+### Disadvantages
+- Only one thread can perform any file operations at any time
+- Threads cannot even access completely separate files at the same time
+- Need to store array of pointers
+
 ### Additional Questions
