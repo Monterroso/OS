@@ -139,3 +139,10 @@ The main form of synchronization will be a single global lock in the syscall.c f
 - Need to store array of pointers
 
 ### Additional Questions
+
+
+The test sc-bad-sp.c attempts to use a bad stack pointer. On line 18, assembly code is used, along with the volatile keyword to prevent the instruction from being removed. Then, the stack pointer (The $sp register) is replaced (via a movl) with a horrifying value, one that is clearly not acceptable. The Operating system should prevent this from occurring and kill the process.
+ 
+The test sc-boundary-2.c sets up a valid stack pointer on line 20, using the step from described from the previous, however it also attempts to push an array “p” into memory. However, on lines 15, 16, and 17, the array is created using the area of the boundary – 7. This makes it such that the first element is on the previous page, and all the others are on the latter. This causes the sys_call (defined on line 16) to be in an invalid location, meaning the process should exit.  
+One such place the tests are missing come from the lack of extensive testing by multithreading, that during the process of a sys call, so while in kernel mode, the thread cannot be interrupted, we do not want sys calls to be interrupted at critical points.  
+
