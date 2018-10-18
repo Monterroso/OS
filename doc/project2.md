@@ -140,18 +140,18 @@ The main form of synchronization will be a single global lock in the syscall.c f
 
 ### Additional Questions
 
-#Additional Question 1#
+####Additional Question 1
 The test sc-bad-sp.c attempts to use a bad stack pointer. On line 18, assembly code is used, along with the volatile keyword to prevent the instruction from being removed. Then, the stack pointer (The $sp register) is replaced (via a movl) with a horrifying value, one that is clearly not acceptable. The Operating system should prevent this from occurring and kill the process.
  
-#Additional Question 2#
+####Additional Question 2
 The test sc-boundary-2.c sets up a valid stack pointer on line 20, using the step from described from the previous, however it also attempts to push an array “p” into memory. However, on lines 15, 16, and 17, the array is created using the area of the boundary – 7. This makes it such that the first element is on the previous page, and all the others are on the latter. This causes the sys_call (defined on line 16) to be in an invalid location, meaning the process should exit. 
  
-#Additional Question 3#
+####Additional Question 3
 One such place the tests are missing come from the lack of extensive testing by multithreading, that during the process of a sys call, so while in kernel mode, the thread cannot be interrupted, we do not want sys calls to be interrupted at critical points.  
 
-#GDB Info#
+####GDB Info#
 
-#Question 1#
+####Question 1
 
 (gdb) info threads
   Id   Target Id         Frame
@@ -175,7 +175,7 @@ ce \357>, priority = 31, allelem = {prev = 0xc0034b50 <all_list>, next = 0xc0104
 = {prev = 0xc000e020, next = 0xc0034b58 <all_list+8>}, elem = {prev = 0xc0034b60
  <ready_list>, next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446325
 
-#Question 2#
+####Question 2
 
 #0  process_execute (file_name=file_name@entry=0xc0007d50 "args-none") at ../../
 userprog/process.c:32
@@ -198,7 +198,7 @@ c:340
   /* Run actions specified on kernel command line. */
   run_actions (argv);
 
-#Question 3#
+####Question 3
 
 In thread main, file name at 0xc0109000
 
@@ -222,15 +222,15 @@ b60 <ready_list>, next = 0xc0034b68 <ready_list+8>}, pagedir = 0x0, magic = 3446
 
 Now there are three threads!
 
-#Question 4#
+####Question 4
 
 It is created at line 55, specifically at static void start_process (void *file_name_)
 
-#Question 5#
+####Question 5
 
 Crash caused at 0x0804870c
 
-#Question 6#
+####Question 6
 
 #0  _start (argc=<error reading variable: can't compute CFA for this frame>, arg
 v=<error reading variable: can't compute CFA for this frame>) at ../../lib/user/
@@ -239,7 +239,7 @@ entry.c:9
 
 
 
-#Question 7#
+####Question 7
 It can't get the frame
 
 
