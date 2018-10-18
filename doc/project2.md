@@ -240,6 +240,5 @@ entry.c:9
 
 
 ####Question 7
-It can't get the frame
-
+It can't get the page
 
