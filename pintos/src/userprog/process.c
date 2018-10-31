@@ -41,17 +41,8 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
-  // Strip args from file_name
   int alphanum = 0;
   unsigned int x;
-  for (x = 0; x < strlen(file_name); x++) {
-    if (file_name[x] == ' ' && alphanum) {
-      file_name[x] = '\x00';
-      break;
-    } else if (file_name[x] != ' ') {
-      alphanum = 1;
-    }
-  }
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
