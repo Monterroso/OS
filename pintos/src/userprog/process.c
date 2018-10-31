@@ -43,8 +43,10 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
+  }
+
   return tid;
 }
 
@@ -200,7 +202,7 @@ struct Elf32_Phdr
 #define PF_W 2          /* Writable. */
 #define PF_R 4          /* Readable. */
 
-static bool setup_stack (void **esp);
+static bool setup_stack (void **esp, char * file_name);
 static bool validate_segment (const struct Elf32_Phdr *, struct file *);
 static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
                           uint32_t read_bytes, uint32_t zero_bytes,
@@ -220,6 +222,17 @@ load (const char *file_name, void (**eip) (void), void **esp)
   bool success = false;
   int i;
 
+  /* Isolate file name */
+  char temp[strlen(file_name)];
+  strlcpy(temp, file_name, strlen(file_name));
+  int x;
+  for (x = 0; x < strlen(file_name); x++) {
+    if (temp[x] == ' ') {
+      temp[x] = '\x00';
+      break;
+    }
+  }
+
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL)
@@ -227,10 +240,10 @@ load (const char *file_name, void (**eip) (void), void **esp)
   process_activate ();
 
   /* Open executable file. */
-  file = filesys_open (file_name);
+  file = filesys_open (temp);
   if (file == NULL)
     {
-      printf ("load: %s: open failed\n", file_name);
+      printf ("load: %s: open failed\n", temp);
       goto done;
     }
 
@@ -307,7 +320,7 @@ load (const char *file_name, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp))
+  if (!setup_stack (esp, file_name))
     goto done;
 
   /* Start address. */
@@ -432,7 +445,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp)
+setup_stack (void **esp, char * file_name)
 {
   uint8_t *kpage;
   bool success = false;
@@ -446,6 +459,69 @@ setup_stack (void **esp)
       else
         palloc_free_page (kpage);
     }
+
+  if (success) {
+      // Count number of arguments
+      int num_args = 0;
+      alphanum = 0;
+      unsigned int x;
+
+      for (x = 0; x <= strlen(file_name); x++) {
+        if ((x == strlen(file_name) || file_name[x]) == ' ' && alphanum) {
+          alphanum = 0;
+          num_args++;
+        } else if (file_name[x] != ' ') {
+          alphanum = 1;
+        }
+      }
+
+      // Copy args to stack and save addresses to an array
+      int start_index = 0;
+      int ad_index = 0;
+      alphanum = 0;
+      void * addresses[num_args];
+      for (x = 0; x <= strlen(file_name); x++) {
+        if ((x == strlen(file_name) || file_name[x] == ' ') && alphanum) {
+          alphanum = 0;
+          // Decrement thread stack length of arg + null terminator
+          *esp -= x - start_index + 1;
+          // Copy arg to the stack
+          memcpy(*esp, &file_name[start_index], x - start_index);
+          *esp[x - start_index] = '\x00';
+          // Save the address and update the thread's stack pointer
+          addresses[ad_index++] = *esp;
+        } else if (file_name[x] != ' ' && !alphanum) {
+          alphanum = 1;
+          start_index = x;
+        }
+      }
+
+      // Word align the args
+      int pad = (int) (((unsigned long) *esp) % 4);
+      *esp -= pad;
+      memset(*esp, 0, pad);
+
+      // Push a null sentinel and the addresses of the args
+      *esp -= 4;
+      memset(*esp, 0, 4);
+      for (x = num_args - 1; x >= 0; x--) {
+        *esp -= 4;
+        memcpy(*esp, addresses[x], 4);
+      }
+
+      // Push argv to the stack
+      *esp -= 4;
+      *esp[0] = *esp + 4;
+
+      // Push argc to the stack
+      *esp -= 4;
+      *esp[0] = num_args;
+
+      // Push arbitrary return address to stack
+      *esp -= 4;
+      memset(*esp, 0, 4);
+  }
+
   return success;
 }
 
