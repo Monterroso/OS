@@ -41,30 +41,30 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
-  int alphanum = 0;
-  unsigned int x;
+  //int alphanum = 0;
+  //unsigned int x;
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
-  } else {
+  } //else {
     // Get pointer to the stack of the new thread
-    uint8_t *stack = thread_current()->stack;
+    //uint8_t *stack = thread_current()->stack;
 
     // Count number of arguments
-    int num_args = 0;
-    alphanum = 0;
+    //int num_args = 0;
+    //alphanum = 0;
 
-    for (x = 0; x <= strlen(fn_copy); x++) {
+    /*for (x = 0; x <= strlen(fn_copy); x++) {
       if ((x == strlen(fn_copy) || fn_copy[x]) == ' ' && alphanum) {
         alphanum = 0;
         num_args++;
       } else if (fn_copy[x] != ' ') {
         alphanum = 1;
       }
-    }
-
+    }*/
+/*
     // Copy args to stack and save addresses to an array
     int start_index = 0;
     int ad_index = 0;
@@ -113,8 +113,8 @@ process_execute (const char *file_name)
     stack -= 4;
     memset(stack, 0, 4);
 
-    thread_current()->stack = stack;
-  }
+    thread_current()->stack = stack;*/
+  //}
 
   return tid;
 }
