@@ -16,16 +16,44 @@ static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
   uint32_t* args = ((uint32_t*) f->esp);
-  //printf("System call number: %d\n", args[0]);
 
-  if (args[0] == SYS_EXIT) {
-    f->eax = args[1];
-    printf("%s: exit(%d)\n", &thread_current ()->name, args[1]);
-    thread_exit();
-  } else if (args[0] == SYS_WRITE) {
-    if (args[1] == 1) {
-      putbuf(args[2], args[3]);
-      f->eax = args[3];
-    }
+  switch (args[0]) {
+
+    /* TASK 2 SYSCALLS */
+
+    case SYS_EXIT :
+      f->eax = args[1];
+      printf("%s: exit(%d)\n", &thread_current ()->name, args[1]);
+      thread_exit();
+      break;
+
+    case SYS_PRACTICE :
+      f->eax = args[1] + 1;
+      break;
+
+    case SYS_HALT :
+      shutdown_power_off();
+      break;
+
+    case SYS_EXEC :
+      f->eax = process_execute(args[1]);
+      break;
+
+    case SYS_WAIT :
+      break;
+
+    /* TASK 3 FILE SYSCALLS */
+
+    case SYS_WRITE :
+      if (args[1] == 1) {
+        putbuf(args[2], args[3]);
+        f->eax = args[3];
+      }
+      break;
+
   }
+}
+
+int verify_pointer(void * ptr, void * esp) {
+  return 1;
 }
