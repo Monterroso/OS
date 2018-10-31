@@ -28,7 +28,7 @@ static bool load (char *cmdline, void (**eip) (void), void **esp);
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
 tid_t
-process_execute (const char *file_name)
+process_execute (char *file_name)
 {
   char *fn_copy;
   tid_t tid;
@@ -40,6 +40,14 @@ process_execute (const char *file_name)
   if (fn_copy == NULL)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
+
+  unsigned int x;
+  for (x = 0; x < strlen(file_name); x++) {
+    if (file_name[x] == ' ') {
+      file_name[x] = '\x00';
+      break;
+    }
+  }
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
