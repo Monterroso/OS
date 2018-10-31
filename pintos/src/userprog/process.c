@@ -21,7 +21,7 @@
 
 static struct semaphore temporary;
 static thread_func start_process NO_RETURN;
-static bool load (const char *cmdline, void (**eip) (void), void **esp);
+static bool load (char *cmdline, void (**eip) (void), void **esp);
 
 /* Starts a new thread running a user program loaded from
    FILENAME.  The new thread may be scheduled (and may even exit)
@@ -213,7 +213,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
    and its initial stack pointer into *ESP.
    Returns true if successful, false otherwise. */
 bool
-load (const char *file_name, void (**eip) (void), void **esp)
+load (char *file_name, void (**eip) (void), void **esp)
 {
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
@@ -224,8 +224,8 @@ load (const char *file_name, void (**eip) (void), void **esp)
 
   /* Isolate file name */
   char temp[strlen(file_name)];
-  strlcpy(temp, file_name, strlen(file_name));
-  int x;
+  strlcpy(temp, file_name, strlen(file_name) + 1);
+  unsigned int x;
   for (x = 0; x < strlen(file_name); x++) {
     if (temp[x] == ' ') {
       temp[x] = '\x00';
@@ -463,7 +463,7 @@ setup_stack (void **esp, char * file_name)
   if (success) {
       // Count number of arguments
       int num_args = 0;
-      alphanum = 0;
+      int alphanum = 0;
       unsigned int x;
 
       for (x = 0; x <= strlen(file_name); x++) {
@@ -484,10 +484,10 @@ setup_stack (void **esp, char * file_name)
         if ((x == strlen(file_name) || file_name[x] == ' ') && alphanum) {
           alphanum = 0;
           // Decrement thread stack length of arg + null terminator
-          *esp -= x - start_index + 1;
+          (*esp) -= x - start_index + 1;
           // Copy arg to the stack
           memcpy(*esp, &file_name[start_index], x - start_index);
-          *esp[x - start_index] = '\x00';
+          ((int *) (*esp))[x - start_index] = '\x00';
           // Save the address and update the thread's stack pointer
           addresses[ad_index++] = *esp;
         } else if (file_name[x] != ' ' && !alphanum) {
@@ -498,27 +498,28 @@ setup_stack (void **esp, char * file_name)
 
       // Word align the args
       int pad = (int) (((unsigned long) *esp) % 4);
-      *esp -= pad;
+      (*esp) -= pad;
       memset(*esp, 0, pad);
 
       // Push a null sentinel and the addresses of the args
-      *esp -= 4;
+      (*esp) -= 4;
       memset(*esp, 0, 4);
-      for (x = num_args - 1; x >= 0; x--) {
-        *esp -= 4;
-        memcpy(*esp, addresses[x], 4);
+      int y;
+      for (y = num_args - 1; y >= 0; y--) {
+        (*esp) -= 4;
+        memcpy(*esp, addresses[y], 4);
       }
 
       // Push argv to the stack
-      *esp -= 4;
-      *esp[0] = *esp + 4;
+      (*esp) -= 4;
+      ((int *) (*esp))[0] = *esp + 4;
 
       // Push argc to the stack
-      *esp -= 4;
-      *esp[0] = num_args;
+      (*esp) -= 4;
+      ((int *) (*esp))[0] = num_args;
 
       // Push arbitrary return address to stack
-      *esp -= 4;
+      (*esp) -= 4;
       memset(*esp, 0, 4);
   }
 
