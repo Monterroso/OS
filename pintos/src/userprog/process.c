@@ -41,6 +41,18 @@ process_execute (const char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  // Strip args from file_name
+  int alphanum = 0;
+  unsigned int x;
+  for (x = 0; x < strlen(file_name); x++) {
+    if (file_name[x] == ' ' && alphanum) {
+      file_name[x] = '\x00';
+      break;
+    } else if (file_name[x] != ' ') {
+      alphanum = 1;
+    }
+  }
+
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR) {
@@ -51,14 +63,13 @@ process_execute (const char *file_name)
 
     // Count number of arguments
     int num_args = 0;
-    int alphanum = 0;
-    unsigned int x;
+    alphanum = 0;
 
     for (x = 0; x <= strlen(fn_copy); x++) {
       if ((x == strlen(fn_copy) || fn_copy[x]) == ' ' && alphanum) {
         alphanum = 0;
         num_args++;
-      } else {
+      } else if (fn_copy[x] != ' ') {
         alphanum = 1;
       }
     }
@@ -79,7 +90,7 @@ process_execute (const char *file_name)
         // Save the address and update the thread's stack pointer
         addresses[ad_index++] = stack;
         thread_current()->stack = stack;
-      } else if (!alphanum) {
+      } else if (fn_copy[x] != ' ' && !alphanum) {
         alphanum = 1;
         start_index = x;
       }
