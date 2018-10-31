@@ -467,7 +467,7 @@ setup_stack (void **esp, char * file_name)
       unsigned int x;
 
       for (x = 0; x <= strlen(file_name); x++) {
-        if ((x == strlen(file_name) || file_name[x]) == ' ' && alphanum) {
+        if ((x == strlen(file_name) || file_name[x] == ' ') && alphanum) {
           alphanum = 0;
           num_args++;
         } else if (file_name[x] != ' ') {
@@ -486,8 +486,7 @@ setup_stack (void **esp, char * file_name)
           // Decrement thread stack length of arg + null terminator
           (*esp) -= x - start_index + 1;
           // Copy arg to the stack
-          memcpy(*esp, &file_name[start_index], x - start_index);
-          ((int *) (*esp))[x - start_index] = '\x00';
+	  strlcpy(*esp, &(file_name[start_index]), x - start_index + 1);
           // Save the address and update the thread's stack pointer
           addresses[ad_index++] = *esp;
         } else if (file_name[x] != ' ' && !alphanum) {
@@ -495,7 +494,6 @@ setup_stack (void **esp, char * file_name)
           start_index = x;
         }
       }
-
       // Word align the args
       int pad = (int) (((unsigned long) *esp) % 4);
       (*esp) -= pad;
@@ -507,7 +505,7 @@ setup_stack (void **esp, char * file_name)
       int y;
       for (y = num_args - 1; y >= 0; y--) {
         (*esp) -= 4;
-        memcpy(*esp, addresses[y], 4);
+	((char **) (*esp))[0] = addresses[y];
       }
 
       // Push argv to the stack
