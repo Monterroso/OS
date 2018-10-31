@@ -43,8 +43,77 @@ process_execute (const char *file_name)
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
-  if (tid == TID_ERROR)
+  if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
+  } else {
+    // Get pointer to the stack of the new thread
+    uint8_t *stack = thread_current()->stack;
+
+    // Count number of arguments
+    int num_args = 0;
+    int alphanum = 0;
+    int x;
+
+    for (x = 0; x <= strlen(fn_copy), x++) {
+      if ((x == strlen(fn_copy) || fn_copy[x]) == ' ' && alphanum) {
+        alphanum = 0;
+        num_args++;
+      } else {
+        alphanum = 1;
+      }
+    }
+
+    // Copy args to stack and save addresses to an array
+    int start_index = 0;
+    int ad_index = 0;
+    alphanum = 0;
+    void * addresses[num_args];
+    for (x = 0; x <= strlen(fn_copy), x++) {
+      if ((x == strlen(fn_copy) || fn_copy[x] == ' ') && alphanum) {
+        alphanum = 0;
+        // Decrement thread stack length of arg + null terminator
+        stack -= x - start_index + 1;
+        // Copy arg to the stack
+        memcpy(stack, &fn_copy[start_index], x - start_index);
+        stack[x - start_index] = '\x00';
+        // Save the address and update the thread's stack pointer
+        addresses[ad_index++] = stack;
+        thread_current()->stack = stack;
+      } else if (!alphanum) {
+        alphanum = 1;
+        start_index = x;
+      }
+    }
+
+    // Word align the args
+    int pad = (int) (((unsigned long) stack) % 4);
+    stack -= pad;
+    memset(stack, 0, pad);
+    thread_current()->stack = stack;
+
+    // Push a null sentinel and the addresses of the args
+    stack -= 4;
+    memset(stack, 0, 4);
+    for (x = num_args - 1; x >= 0; x--) {
+      stack -= 4;
+      memcpy(stack, addresses[x], 4);
+    }
+
+    // Push argv to the stack
+    stack -= 4;
+    stack[0] = stack + 4;
+
+    // Push argc to the stack
+    stack -= 4;
+    stack[0] = num_args;
+
+    // Push arbitrary return address to stack
+    stack -= 4;
+    memset(stack, 0, 4);
+
+    thread_current()->stack = stack;
+  }
+
   return tid;
 }
 
