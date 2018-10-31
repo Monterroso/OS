@@ -52,9 +52,9 @@ process_execute (const char *file_name)
     // Count number of arguments
     int num_args = 0;
     int alphanum = 0;
-    int x;
+    unsigned int x;
 
-    for (x = 0; x <= strlen(fn_copy), x++) {
+    for (x = 0; x <= strlen(fn_copy); x++) {
       if ((x == strlen(fn_copy) || fn_copy[x]) == ' ' && alphanum) {
         alphanum = 0;
         num_args++;
@@ -68,7 +68,7 @@ process_execute (const char *file_name)
     int ad_index = 0;
     alphanum = 0;
     void * addresses[num_args];
-    for (x = 0; x <= strlen(fn_copy), x++) {
+    for (x = 0; x <= strlen(fn_copy); x++) {
       if ((x == strlen(fn_copy) || fn_copy[x] == ' ') && alphanum) {
         alphanum = 0;
         // Decrement thread stack length of arg + null terminator
