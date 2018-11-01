@@ -28,12 +28,14 @@ static bool load (char *cmdline, void (**eip) (void), void **esp);
    before process_execute() returns.  Returns the new process's
    thread id, or TID_ERROR if the thread cannot be created. */
 tid_t
-process_execute (char *file_name)
+process_execute (const char *file_name)
 {
   char *fn_copy;
+  char *fn_copy_dos;
   tid_t tid;
 
-  sema_init (&temporary, 0);
+  //printf("\nDEBUG: %s\n\n", file_name);
+
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
   fn_copy = palloc_get_page (0);
@@ -41,16 +43,21 @@ process_execute (char *file_name)
     return TID_ERROR;
   strlcpy (fn_copy, file_name, PGSIZE);
 
+  fn_copy_dos = palloc_get_page(0);
+  if (fn_copy_dos == NULL)
+    return TID_ERROR;
+  strlcpy (fn_copy_dos, file_name, PGSIZE);
+
   unsigned int x;
-  for (x = 0; x < strlen(file_name); x++) {
-    if (file_name[x] == ' ') {
-      file_name[x] = '\x00';
+  for (x = 0; x < strlen(fn_copy_dos); x++) {
+    if (fn_copy_dos[x] == ' ') {
+      fn_copy_dos[x] = '\x00';
       break;
     }
   }
 
   /* Create a new thread to execute FILE_NAME. */
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (fn_copy_dos, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR) {
     palloc_free_page (fn_copy);
   }
@@ -99,10 +106,28 @@ start_process (void *file_name_)
    This function will be implemented in problem 2-2.  For now, it
    does nothing. */
 int
-process_wait (tid_t child_tid UNUSED)
+process_wait (tid_t child_tid)
 {
-  sema_down (&temporary);
-  return 0;
+  struct list_elem * next;
+  struct list * children = &(thread_current()->children);
+  struct process_info * info = NULL;
+  for (next = list_begin(children); next != list_end(children); next = list_next(next)) {
+    info = list_entry(next, struct process_info, elem);
+    if (info->pid == child_tid)
+       break;
+    info = NULL;
+  }
+  if (info != NULL) {
+    sema_down(&(info->wait_sema));
+    int ret = info->exit_status;
+
+    enum intr_level old = intr_disable();
+    list_remove(&(info->elem));
+    intr_set_level(old);
+    free(info);
+    return ret;
+  }
+  return -1;
 }
 
 /* Free the current process's resources. */
@@ -128,7 +153,7 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
-  sema_up (&temporary);
+  sema_up (&(cur->info->wait_sema));
 }
 
 /* Sets up the CPU for running user code in the current
@@ -223,6 +248,7 @@ static bool load_segment (struct file *file, off_t ofs, uint8_t *upage,
 bool
 load (char *file_name, void (**eip) (void), void **esp)
 {
+
   struct thread *t = thread_current ();
   struct Elf32_Ehdr ehdr;
   struct file *file = NULL;
@@ -341,8 +367,8 @@ load (char *file_name, void (**eip) (void), void **esp)
   file_close (file);
 
   /* Update the thread's process information */
-  thread_current()->process_info->loaded = success;
-  sema_up(&(thread_current()->process_info->load_sema);
+  thread_current()->info->loaded = success;
+  sema_up(&(thread_current()->info->load_sema));
 
   return success;
 }

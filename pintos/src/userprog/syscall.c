@@ -22,6 +22,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     /* TASK 2 SYSCALLS */
 
     case SYS_EXIT :
+      thread_current()->info->exit_status = args[1];
       f->eax = args[1];
       printf("%s: exit(%d)\n", &thread_current ()->name, args[1]);
       thread_exit();
@@ -52,12 +53,17 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
       if (info != NULL) {
         sema_down(&(info->load_sema));
-        if (!info->loaded)
-          list_remove(info->elem);
+        if (!info->loaded) {
+	  enum intr_level old = intr_disable();
+          list_remove(&(info->elem));
+          intr_set_level(old);
+	  free(info);
+	}
       }
       break;
 
     case SYS_WAIT :
+      f->eax = process_wait(args[1]);
       break;
 
     /* TASK 3 FILE SYSCALLS */
