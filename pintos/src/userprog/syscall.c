@@ -36,7 +36,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
 
     case SYS_EXEC :
-      //f->eax = process_execute(args[1]);
+      f->eax = process_execute(args[1]);
       break;
 
     case SYS_WAIT :
