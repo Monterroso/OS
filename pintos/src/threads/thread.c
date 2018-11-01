@@ -464,6 +464,18 @@ init_thread (struct thread *t, const char *name, int priority)
   t->priority = priority;
   t->magic = THREAD_MAGIC;
 
+  /* Initialize t's process information */
+  t->info = malloc(sizeof(struct process_info));
+  t->info->pid = t->tid;
+  t->info->loaded = false;
+  t->info->waiting = false;
+  t->exit_status = NULL;
+  sema_init(&(t->info->sema), 0);
+  list_init(&(t->children));
+
+  /* Add thread to parent's list of children */
+  list_push_front(&(thread_current()->children), t->info->elem);
+
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
   intr_set_level (old_level);

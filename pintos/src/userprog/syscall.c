@@ -37,6 +37,24 @@ syscall_handler (struct intr_frame *f UNUSED)
 
     case SYS_EXEC :
       f->eax = process_execute(args[1]);
+
+      if (f->eax == TID_ERROR)
+        break;
+
+      struct list_elem * next;
+      struct list * children = &(thread_current()->children);
+      struct process_info * info = NULL;
+      for (next = list_begin(children); next != list_end(children); next = list_next(next)) {
+        info = list_entry(next, struct process_info, elem);
+        if (info->pid == f->eax)
+          break;
+        info = NULL;
+      }
+      if (info != NULL) {
+        sema_down(&(info->load_sema));
+        if (!info->loaded)
+          list_remove(info->elem);
+      }
       break;
 
     case SYS_WAIT :

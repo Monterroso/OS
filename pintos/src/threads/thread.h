@@ -100,6 +100,9 @@ struct thread
     uint32_t *pagedir;                  /* Page directory. */
 #endif
 
+    struct process_info * info;
+    struct list children;
+
     /* Owned by thread.c. */
     unsigned magic;                     /* Detects stack overflow. */
   };

@@ -339,6 +339,11 @@ load (char *file_name, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+
+  /* Update the thread's process information */
+  thread_current()->process_info->loaded = success;
+  sema_up(&(thread_current()->process_info->load_sema);
+
   return success;
 }
 
