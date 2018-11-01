@@ -3,8 +3,10 @@
 #include <syscall-nr.h>
 #include "threads/interrupt.h"
 #include "threads/thread.h"
+#include "threads/vaddr.h"
 
 static void syscall_handler (struct intr_frame *);
+//void verify_pointer(void * ptr, struct intr_frame * f);
 
 void
 syscall_init (void)
@@ -16,6 +18,8 @@ static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
   uint32_t* args = ((uint32_t*) f->esp);
+  verify_pointer(args, f);
+  verify_pointer(args + 1, f);
 
   switch (args[0]) {
 
@@ -69,6 +73,8 @@ syscall_handler (struct intr_frame *f UNUSED)
     /* TASK 3 FILE SYSCALLS */
 
     case SYS_WRITE :
+      verify_pointer(args + 2, f);
+      verify_pointer(args + 3, f);
       if (args[1] == 1) {
         putbuf(args[2], args[3]);
         f->eax = args[3];
@@ -78,6 +84,12 @@ syscall_handler (struct intr_frame *f UNUSED)
   }
 }
 
-int verify_pointer(void * ptr, void * esp) {
-  return 1;
+void verify_pointer(void * ptr, struct intr_frame * f) {
+  struct thread * cur = thread_current();
+  if (!is_user_vaddr(ptr) || pagedir_get_page(cur->pagedir, ptr) == NULL) {
+    cur->info->exit_status = -1;
+    f->eax = -1;
+    printf("%s: exit(%d)\n", cur->name, -1);
+    thread_exit();
+  }
 }
