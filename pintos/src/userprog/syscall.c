@@ -90,8 +90,16 @@ syscall_handler (struct intr_frame *f UNUSED)
   	// tell
   	// close
     case SYS_WRITE :
-      verify_pointer((void*)(args + 2), f);
-      verify_pointer((void*)(args + 3), f);
+
+      //lets check to be sure the buffer starts in user memory
+      verify_pointer((void*)(args[2]), f);
+
+      //lets check to be sure the buffer ends in user memeory
+      verify_pointer((void*)(args[2] + args[3]), f);
+
+
+
+      //verify_pointer((void*)(args + 3), f);
       if (args[1] == 1) {
         putbuf(args[2], args[3]);
         f->eax = args[3];
@@ -132,7 +140,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
 
     case SYS_CREATE :
-    	verify_pointer(args + 2, f);
+    	verify_pointer(args[1], f);
+
+      verify_pointer(args[1] + args[2], f);
 
       //filesys_create should have the functionality we want
     	f->eax = filesys_create ((char *) args[1], args[2]);
@@ -149,6 +159,12 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_OPEN : {
       //we first get the file structure, and open at the same time
       //using the built in filesys_open function
+
+      //lets just return if we are given a NULL name
+      if (args[1] == NULL) {
+        f->eax = -1;
+        return;
+      }
 
       struct file *fi = filesys_open (args[1]);
 
@@ -177,7 +193,13 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
     }
 
-    SYS_READ : {
+    case SYS_READ : {
+      //lets check to be sure the buffer starts in user memory
+      verify_pointer((void*)(args[2]), f);
+
+      //lets check to be sure the buffer ends in user memeory
+      verify_pointer((void*)(args[2] + args[3]), f);
+
       //lets check if we are reading from 0 or something else
       if (args[1] == 0) {
         f->eax = input_getc();
