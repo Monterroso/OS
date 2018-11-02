@@ -395,7 +395,7 @@ thread_get_recent_cpu (void)
   return 0;
 }
 
-/*Returns the file associated with the id, returns -1 if */
+/*Returns the file associated with the id, returns NULL if nothing was found*/
 struct file *
 thread_get_file(int fd) {
   struct list *filelist = &thread_current ()->file_list;
@@ -411,6 +411,24 @@ thread_get_file(int fd) {
 
   return NULL;
 }
+
+/*Returns the file_map associated with the id, returns NULL if nothing was found*/
+struct file_map *
+thread_get_file_struct(int fd) {
+  struct list *filelist = &thread_current ()->file_list;
+  struct list_elem *tempelem = list_begin(filelist);
+
+  for ( ; tempelem != list_end(filelist); tempelem = list_next(tempelem)) {
+    struct file_map *filmap = list_entry (tempelem, struct file_map, elem);
+
+    if (filmap->fd == fd) {
+      return filmap;
+    }
+  }
+
+  return NULL;
+}
+
 
 /*This creates a map */
 struct file_map *create_file_map(struct file *fi, int fd) {

@@ -125,7 +125,7 @@ struct process_info {
 /*This data structure used for file elements. */
 struct file_map {
   struct file *fi;    // The file that the structure holds
-  struct list_elem elem;    //The liste element to be put in the file list of the thread
+  struct list_elem elem;    //The list element to be put in the file list of the thread
   int fd;   //The corresponding fd of the file in this list. 
 };
 
@@ -136,6 +136,8 @@ struct file_map {
 extern bool thread_mlfqs;
 
 struct file *thread_get_file(int fd); //gets the file from int fd
+
+struct file_map *thread_get_file_struct(int fd); //gets the structure holding the file from the fd
 
 struct file_map *create_file_map(struct file *fi, int fd);
 

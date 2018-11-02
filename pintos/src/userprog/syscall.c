@@ -9,6 +9,8 @@
 #include "filesys/file.h"
 #include "filesys/filesys.h"
 
+#include "devices/input.h"
+
 static void syscall_handler (struct intr_frame *);
 //void verify_pointer(void * ptr, struct intr_frame * f);
 
@@ -82,6 +84,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     //create
     //remove
     //open
+    //filesize
   	// read
   	// seek
   	// tell
@@ -157,6 +160,87 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       //otherwise we add the file to our list and return the fd
       f->eax = addfile(fi);
+
+      break;
+    }
+
+    case SYS_FILESIZE : {
+
+      struct file *fi = thread_get_file(args[1]);
+
+      if (fi == NULL) {
+        f->eax = -1;
+        return;
+      }
+
+      f->eax = file_length (fi);
+      break;
+    }
+
+    SYS_READ : {
+      //lets check if we are reading from 0 or something else
+      if (args[1] == 0) {
+        f->eax = input_getc();
+        return;
+      }
+
+      //check valid for buffer, and that it doesn't write more than it can?
+
+      //otherwise we want to read from the file
+
+      //We get the file struct of the file given the fd
+      struct file *fi = thread_get_file(args[1]);
+
+      if (fi == NULL) {
+        f->eax = -1;
+        return;
+      }
+
+
+      //now we read
+      //file_read (struct file *file, void *buffer, off_t size)
+      f->eax = file_read (fi, args[2], args[3]);
+
+      break;
+
+    }
+
+    case SYS_SEEK : {
+      //do we need to do anything else for this?
+
+      //We just want get the file from the fd. 
+      struct file *fi = thread_get_file(args[1]);
+
+      //now we just call seek
+      file_seek (fi, args[2]);
+
+      break;
+    }
+
+    case SYS_TELL : {
+
+      struct file *fi = thread_get_file(args[1]);
+
+      //it's possible we need to incriment this by 1. 
+      f->eax = file_tell(fi);
+
+      break;
+    }
+
+    case SYS_CLOSE : {
+      //this gives us the file from the file description. 
+      struct file_map *filmp = thread_get_file_struct(args[1]);
+
+      //lets check if we got something
+      if (filmp == NULL) {
+        return;
+      }
+
+      //we close it, giving the 
+      file_close (filmp->fi);
+
+      //now we remove it from our list;
+      list_remove(&(filmp->elem));
 
       break;
     }
