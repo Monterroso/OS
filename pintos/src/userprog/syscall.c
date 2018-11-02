@@ -159,6 +159,8 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_OPEN : {
       //we first get the file structure, and open at the same time
       //using the built in filesys_open function
+      //lets verify that we aren't given a bad pointer
+      verify_pointer(args[1], f);
 
       //lets just return if we are given a NULL name
       if (args[1] == NULL) {
@@ -301,7 +303,7 @@ int addfile(struct file *in) {
   struct file_map *fm = create_file_map(in, new_id);
 
   //now we push the thread onto our thread list and let it sail
-  list_push_back(&currythread->file_list, fm);
+  list_push_back(&currythread->file_list, &fm->elem);
 
 	return new_id;
 
