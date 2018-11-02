@@ -103,6 +103,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       if (args[1] == 1) {
         putbuf(args[2], args[3]);
         f->eax = args[3];
+      } else if (args[1] == 0) {
+        f->eax = -1;
+        return;        
       //The case we have a valid ID
       } else if (args[1] > 1){
 
@@ -119,7 +122,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         }
 
         //lets make sure we aren't writing to a directory
-        //We can check this another time. 
+        //We can check this another time.
         /*
         if (file_isdir()) {
           return 0; //lets not write to anything if this is a directory
@@ -130,7 +133,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         //filewrite should have all of the functionality we want
         f->eax = file_write (fi, args[2], args[3]);
 
-      	
+
       }
       //this is in case we are given a value of 0 or lower
       else {
@@ -150,7 +153,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
     case SYS_REMOVE :
       //We don't need to clear the fd value
-      //once the file is removed, it should 
+      //once the file is removed, it should
       //still be able to be accessed by this
       //this thread by the file descriptors
       f->eax = filesys_remove (args[1]);
@@ -232,7 +235,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_SEEK : {
       //do we need to do anything else for this?
 
-      //We just want get the file from the fd. 
+      //We just want get the file from the fd.
       struct file *fi = thread_get_file(args[1]);
 
       //now we just call seek
@@ -245,14 +248,14 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       struct file *fi = thread_get_file(args[1]);
 
-      //it's possible we need to incriment this by 1. 
+      //it's possible we need to incriment this by 1.
       f->eax = file_tell(fi);
 
       break;
     }
 
     case SYS_CLOSE : {
-      //this gives us the file from the file description. 
+      //this gives us the file from the file description.
       struct file_map *filmp = thread_get_file_struct(args[1]);
 
       //lets check if we got something
@@ -260,7 +263,7 @@ syscall_handler (struct intr_frame *f UNUSED)
         return;
       }
 
-      //we close it, giving the 
+      //we close it, giving the
       file_close (filmp->fi);
 
       //now we remove it from our list;
@@ -268,7 +271,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       break;
     }
-    
+
   }
 }
 
@@ -296,7 +299,7 @@ int addfile(struct file *in) {
   //get the current thread
 	struct thread *currythread = thread_current();
 
-  //lets get the new value that we want. 
+  //lets get the new value that we want.
   int new_id = currythread->current_fd++;
 
   //now we want to create the file_map that will store that info
