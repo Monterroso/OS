@@ -37,7 +37,6 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_EXIT :
       thread_current()->info->exit_status = args[1];
       f->eax = args[1];
-      printf("%s: exit(%d)\n", &thread_current ()->name, args[1]);
       thread_exit();
       break;
 
@@ -50,6 +49,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
 
     case SYS_EXEC :
+
+      // Lets be sure we check we don't have a bad pointer
+      verify_pointer((void*)(args[1]), f);
+
       f->eax = process_execute(args[1]);
 
       if (f->eax == TID_ERROR)
@@ -315,7 +318,6 @@ void verify_pointer(void * ptr, struct intr_frame *f) {
   if (!is_user_vaddr(ptr) || pagedir_get_page(cur->pagedir, ptr) == NULL) {
     cur->info->exit_status = -1;
     f->eax = -1;
-    printf("%s: exit(%d)\n", cur->name, -1);
     thread_exit();
   }
 }

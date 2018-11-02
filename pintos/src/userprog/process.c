@@ -85,6 +85,7 @@ start_process (void *file_name_)
   palloc_free_page (file_name);
   if (!success)
     thread_exit ();
+  thread_current ()->info->pid = thread_current ()->tid;
 
   /* Start the user process by simulating a return from an
      interrupt, implemented by intr_exit (in
@@ -153,6 +154,9 @@ process_exit (void)
       pagedir_activate (NULL);
       pagedir_destroy (pd);
     }
+  file_close(cur->executable);
+  printf("%s: exit(%d)\n", &thread_current ()->name, cur->info->exit_status);
+
   sema_up (&(cur->info->wait_sema));
 }
 
@@ -280,6 +284,7 @@ load (char *file_name, void (**eip) (void), void **esp)
       printf ("load: %s: open failed\n", temp);
       goto done;
     }
+  file_deny_write(file);
 
   /* Read and verify executable header. */
   if (file_read (file, &ehdr, sizeof ehdr) != sizeof ehdr
@@ -364,7 +369,8 @@ load (char *file_name, void (**eip) (void), void **esp)
 
  done:
   /* We arrive here whether the load is successful or not. */
-  file_close (file);
+  // file_close (file);
+  t->executable = file;
 
   /* Update the thread's process information */
   thread_current()->info->loaded = success;

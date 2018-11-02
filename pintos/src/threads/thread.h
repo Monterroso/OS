@@ -99,6 +99,8 @@ struct thread
     struct list file_list;              /*List to contain all the file fd's*/
     int current_fd;                     /*The next ID we want to use. */
 
+    struct file *executable;            /*The file that is running*/
+
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
