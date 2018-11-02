@@ -413,23 +413,25 @@ thread_get_file(int fd) {
 }
 
 /*This creates a map */
-struct file_map *create_file_map(const char* name, struct file *fi, int fd) {
+struct file_map *create_file_map(struct file *fi, int fd) {
   struct file_map *fm = malloc(sizeof (struct file_map));
 
   //we set the file in the file_map
   fm->fi = fi;
 
+//lets say we don't need the name
+/*
   //now we create space for the name. 
   fm->name = malloc(sizeof(char) * strlen(name)); 
 
   //copy the name over now that we've set space for it. 
   memcpy(fm->name, name, strlen(name));
-
+*/
   //now we create space for the list element
-  struct list_elem elem = malloc(sizeof(struct list_elem));
+  struct list_elem *elem = malloc(sizeof(struct list_elem));
 
   //set the element
-  fm->elem = elem;
+  fm->elem = *elem;
 
   //now we set the ID
   fm->fd = fd;

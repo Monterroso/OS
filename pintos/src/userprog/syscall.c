@@ -7,6 +7,7 @@
 
 #include "filesys/off_t.h"
 #include "filesys/file.h"
+#include "filesys/filesys.h"
 
 static void syscall_handler (struct intr_frame *);
 //void verify_pointer(void * ptr, struct intr_frame * f);
@@ -97,7 +98,8 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       	//get files with corresponding fd
         //do this by calling thread_get_file(int fd)
-        struct file *fi = thread_get_file(int fd);
+        //first argument is the file fd
+        struct file *fi = thread_get_file(args[1]);
 
         //if file is null, lets set the code to -1;
         if (fi == NULL) {
@@ -138,15 +140,13 @@ syscall_handler (struct intr_frame *f UNUSED)
       //once the file is removed, it should 
       //still be able to be accessed by this
       //this thread by the file descriptors
-
-      //This removes the file, obliterating it with lazers
-      //pew pew bwwoooooooooooooshshshshs
       f->eax = filesys_remove (args[1]);
       break;
 
-    case SYS_OPEN :
+    case SYS_OPEN : {
       //we first get the file structure, and open at the same time
       //using the built in filesys_open function
+
       struct file *fi = filesys_open (args[1]);
 
       //if it's null, we set the status to -1 for not success
@@ -159,7 +159,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       f->eax = addfile(fi);
 
       break;
-
+    }
     
   }
 }
