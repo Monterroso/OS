@@ -124,15 +124,21 @@ struct process_info {
 
 /*This data structure used for file elements. */
 struct file_map {
+  char *name;
   struct file *fi;    // The file that the structure holds
   struct list_elem elem;    //The liste element to be put in the file list of the thread
   int fd;   //The corresponding fd of the file in this list. 
 };
 
+
 /* If false (default), use round-robin scheduler.
    If true, use multi-level feedback queue scheduler.
    Controlled by kernel command-line option "-o mlfqs". */
 extern bool thread_mlfqs;
+
+struct file *thread_get_file(int fd); //gets the file from int fd
+
+struct file_map *create_file_map(const char *name, struct file *fi, int fd);
 
 void thread_init (void);
 void thread_start (void);

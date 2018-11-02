@@ -12,6 +12,7 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "threads/malloc.h"
+#include <list.h>
 
 #ifdef USERPROG
 #include "userprog/process.h"
@@ -395,16 +396,12 @@ thread_get_recent_cpu (void)
 }
 
 /*Returns the file associated with the id, returns -1 if */
-struct file*
+struct file *
 thread_get_file(int fd) {
   struct list *filelist = &thread_current ()->file_list;
   struct list_elem *tempelem = list_begin(filelist);
 
-  if (fd < 2) {
-    return 0;
-  }
-
-	for ( ; tempelem != list_end(filelist); tempelem = list_next(filelist)) {
+	for ( ; tempelem != list_end(filelist); tempelem = list_next(tempelem)) {
     struct file_map *filmap = list_entry (tempelem, struct file_map, elem);
 
     if (filmap->fd == fd) {
@@ -412,26 +409,36 @@ thread_get_file(int fd) {
     }
   }
 
-  return -1;
-
-  // while (1 == 1) {
-  //
-  //   elem = list_begin(flielist);
-  //
-  //   if (elem == NULL) {
-  //     return -1;
-  //   }
-  //
-  //   struct file_map *filmap = list_entry (elem, struct thread, file_list);
-  //
-  //   if (filmap->fd == fd) {
-  //     return filmap->fi;
-  //   }
-  //   else {
-  //     elem = elem->next;
-  //   }
-  // }
+  return NULL;
 }
+
+/*This creates a map */
+struct file_map *create_file_map(const char* name, struct file *fi, int fd) {
+  struct file_map *fm = malloc(sizeof (struct file_map));
+
+  //we set the file in the file_map
+  fm->fi = fi;
+
+  //now we create space for the name. 
+  fm->name = malloc(sizeof(char) * strlen(name)); 
+
+  //copy the name over now that we've set space for it. 
+  memcpy(fm->name, name, strlen(name));
+
+  //now we create space for the list element
+  struct list_elem elem = malloc(sizeof(struct list_elem));
+
+  //set the element
+  fm->elem = elem;
+
+  //now we set the ID
+  fm->fd = fd;
+
+  return fm;
+}
+
+
+
 
 /* Idle thread.  Executes when no other thread is ready to run.
 

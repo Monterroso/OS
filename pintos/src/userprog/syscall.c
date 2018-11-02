@@ -91,17 +91,75 @@ syscall_handler (struct intr_frame *f UNUSED)
       if (args[1] == 1) {
         putbuf(args[2], args[3]);
         f->eax = args[3];
-      } else {
-      	//get files with corresponding fd 
-      	//call filewrite
-      	// if (file_isdir());
-      }
-      // break;
+      //The case we have a valid ID
+      } else if (args[1] > 1){
 
-    // case SYS_CREATE :
-    // 	verify_pointer(args + 2, f);
-	   //  verify_pointer(args + 3, f);
-    // 	f->eax = filesys_create ((char *) args[1], args[2], false);
+
+      	//get files with corresponding fd
+        //do this by calling thread_get_file(int fd)
+        struct file *fi = thread_get_file(int fd);
+
+        //if file is null, lets set the code to -1;
+        if (fi == NULL) {
+          f->eax = -1;
+          return;
+        }
+
+        //lets make sure we aren't writing to a directory
+        //We can check this another time. 
+        /*
+        if (file_isdir()) {
+          return 0; //lets not write to anything if this is a directory
+        }
+        */
+
+      	//call filewrite to write to the file, and return it's value
+        //filewrite should have all of the functionality we want
+        f->eax = file_write (fi, args[2], args[3]);
+
+      	
+      }
+      //this is in case we are given a value of 0 or lower
+      else {
+        printf("%s", "You tried accessing a file ID that's 0 or lower");
+      }
+
+      break;
+
+    case SYS_CREATE :
+    	verify_pointer(args + 2, f);
+
+      //filesys_create should have the functionality we want
+    	f->eax = filesys_create ((char *) args[1], args[2]);
+      break;
+
+    case SYS_REMOVE :
+      //We don't need to clear the fd value
+      //once the file is removed, it should 
+      //still be able to be accessed by this
+      //this thread by the file descriptors
+
+      //This removes the file, obliterating it with lazers
+      //pew pew bwwoooooooooooooshshshshs
+      f->eax = filesys_remove (args[1]);
+      break;
+
+    case SYS_OPEN :
+      //we first get the file structure, and open at the same time
+      //using the built in filesys_open function
+      struct file *fi = filesys_open (args[1]);
+
+      //if it's null, we set the status to -1 for not success
+      if (fi == NULL) {
+        f->eax = -1;
+        return;
+      }
+
+      //otherwise we add the file to our list and return the fd
+      f->eax = addfile(fi);
+
+      break;
+
     
   }
 }
@@ -124,12 +182,22 @@ struct file *getfile(int fd) {
 
 }
 
+/*Given a file structure, we return an fd and add it to our list*/
 int addfile(struct file *in) {
-	// struct thread *currythread = thread_current();
-	// in->fd = currythread->current_fd++;
-	// list_push_back(&currythread->file_list, in);
-	// return in->fd;
-	return NULL;
+
+  //get the current thread
+	struct thread *currythread = thread_current();
+
+  //lets get the new value that we want. 
+  int new_id = currythread->current_fd++;
+
+  //now we want to create the file_map that will store that info
+  struct file_map *fm = create_file_map(in, new_id);
+
+  //now we push the thread onto our thread list and let it sail
+  list_push_back(&currythread->file_list, fm);
+
+	return new_id;
 
 }
 
