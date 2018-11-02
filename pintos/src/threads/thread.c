@@ -212,7 +212,7 @@ thread_create (const char *name, int priority,
 
 
   enum intr_level old = intr_disable();
-  // Add thread to parent's list of children 
+  // Add thread to parent's list of children
   list_push_front(&(thread_current()->children), &(t->info->elem));
   intr_set_level(old);
 
@@ -397,30 +397,40 @@ thread_get_recent_cpu (void)
 /*Returns the file associated with the id, returns -1 if */
 struct file*
 thread_get_file(int fd) {
-  struct list filelist = thread_current ()->file_list;
-  struct list_elem *elem;
+  struct list *filelist = &thread_current ()->file_list;
+  struct list_elem *tempelem = list_begin(filelist);
 
   if (fd < 2) {
     return 0;
   }
 
-  while (1 == 1) {
-
-    elem = list_begin(flielist);
-
-    if (elem == NULL) {
-      return -1;
-    }
-
-    struct file_map *filmap = list_entry (elem, struct thread, file_list);
+	for ( ; tempelem != list_end(filelist); tempelem = list_next(filelist)) {
+    struct file_map *filmap = list_entry (tempelem, struct file_map, elem);
 
     if (filmap->fd == fd) {
       return filmap->fi;
     }
-    else {
-      elem = elem->next;
-    }
   }
+
+  return -1;
+
+  // while (1 == 1) {
+  //
+  //   elem = list_begin(flielist);
+  //
+  //   if (elem == NULL) {
+  //     return -1;
+  //   }
+  //
+  //   struct file_map *filmap = list_entry (elem, struct thread, file_list);
+  //
+  //   if (filmap->fd == fd) {
+  //     return filmap->fi;
+  //   }
+  //   else {
+  //     elem = elem->next;
+  //   }
+  // }
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.
