@@ -40,6 +40,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
 
     case SYS_WAIT :
+      f->eax = process_wait (args[1]);
       break;
 
     /* TASK 3 FILE SYSCALLS */
@@ -51,6 +52,8 @@ syscall_handler (struct intr_frame *f UNUSED)
       }
       break;
 
+    // case SYS_CREATE :
+    
   }
 }
 
