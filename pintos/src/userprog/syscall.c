@@ -5,6 +5,9 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 
+#include "filesys/off_t.h"
+#include "filesys/file.h"
+
 static void syscall_handler (struct intr_frame *);
 //void verify_pointer(void * ptr, struct intr_frame * f);
 
@@ -83,8 +86,8 @@ syscall_handler (struct intr_frame *f UNUSED)
   	// tell
   	// close
     case SYS_WRITE :
-      verify_pointer(args + 2, f);
-      verify_pointer(args + 3, f);
+      verify_pointer((void*)(args + 2), f);
+      verify_pointer((void*)(args + 3), f);
       if (args[1] == 1) {
         putbuf(args[2], args[3]);
         f->eax = args[3];
@@ -131,7 +134,7 @@ int addfile(struct file *in) {
 }
 
 
-void verify_pointer(void * ptr, struct intr_frame * f) {
+void verify_pointer(void * ptr, struct intr_frame *f) {
   struct thread * cur = thread_current();
   if (!is_user_vaddr(ptr) || pagedir_get_page(cur->pagedir, ptr) == NULL) {
     cur->info->exit_status = -1;

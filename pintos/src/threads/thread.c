@@ -11,6 +11,8 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/malloc.h"
+
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -204,7 +206,7 @@ thread_create (const char *name, int priority,
   t->info->pid = t->tid;
   t->info->loaded = false;
   t->info->waiting = false;
-  t->info->exit_status = NULL;
+  t->info->exit_status = (int)NULL;
   sema_init(&(t->info->load_sema), 0);
   sema_init(&(t->info->wait_sema), 0);
 
@@ -390,6 +392,35 @@ thread_get_recent_cpu (void)
 {
   /* Not yet implemented. */
   return 0;
+}
+
+/*Returns the file associated with the id, returns -1 if */
+struct file*
+thread_get_file(int fd) {
+  struct list filelist = thread_current ()->file_list;
+  struct list_elem *elem;
+
+  if (fd < 2) {
+    return 0;
+  }
+
+  while (1 == 1) {
+
+    elem = list_begin(flielist);
+
+    if (elem == NULL) {
+      return -1;
+    }
+
+    struct file_map *filmap = list_entry (elem, struct thread, file_list);
+
+    if (filmap->fd == fd) {
+      return filmap->fi;
+    }
+    else {
+      elem = elem->next;
+    }
+  }
 }
 
 /* Idle thread.  Executes when no other thread is ready to run.

@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "threads/synch.h"
 #include "threads/fixed-point.h"
+#include "filesys/file.h"
 
 /* States in a thread's life cycle. */
 enum thread_status
@@ -95,8 +96,8 @@ struct thread
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /* List element. */
 
-    struct list file_list;
-    int current_fd;
+    struct list file_list;              /*List to contain all the file fd's*/
+    int current_fd;                     /*The next ID we want to use. */
 
 
 #ifdef USERPROG
@@ -119,6 +120,13 @@ struct process_info {
     int exit_status;
     struct semaphore wait_sema;
     struct semaphore load_sema;
+};
+
+/*This data structure used for file elements. */
+struct file_map {
+  struct file *fi;    // The file that the structure holds
+  struct list_elem elem;    //The liste element to be put in the file list of the thread
+  int fd;   //The corresponding fd of the file in this list. 
 };
 
 /* If false (default), use round-robin scheduler.
