@@ -256,23 +256,23 @@ syscall_handler (struct intr_frame *f UNUSED)
 
     case SYS_SEEK : {
       //do we need to do anything else for this?
-
+      
       //We just want get the file from the fd.
       struct file *fi = thread_get_file(args[1]);
 
       //now we just call seek
       file_seek (fi, args[2]);
-
+      
       break;
     }
 
     case SYS_TELL : {
-
+      
       struct file *fi = thread_get_file(args[1]);
 
       //it's possible we need to incriment this by 1.
       f->eax = file_tell(fi);
-
+      
       break;
     }
 
@@ -290,6 +290,9 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       //now we remove it from our list;
       list_remove(&(filmp->elem));
+
+      //now we want to be sure to free the file element
+      //free_file_map(filmp);
 
       break;
     }

@@ -457,8 +457,14 @@ struct file_map *create_file_map(struct file *fi, int fd) {
   return fm;
 }
 
+//This frees the structure in question.
+void
+free_file_map(struct file_map *fimp) {
+   free(&(fimp->fi));
+   free(&(fimp->elem));
+   free(fimp);
 
-
+}
 
 /* Idle thread.  Executes when no other thread is ready to run.
 

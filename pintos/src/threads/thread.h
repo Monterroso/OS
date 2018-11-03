@@ -143,6 +143,8 @@ struct file_map *thread_get_file_struct(int fd); //gets the structure holding th
 
 struct file_map *create_file_map(struct file *fi, int fd);
 
+void free_file_map(struct file_map *fimp);
+
 void thread_init (void);
 void thread_start (void);
 
