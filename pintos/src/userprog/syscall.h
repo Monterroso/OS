@@ -13,7 +13,7 @@
 
 void syscall_init (void);
 
-void verify_pointer(void * ptr, struct intr_frame *f);
+void verify_pointer(void * ptr, struct intr_frame *f, bool haslock);
 
 int addfile(struct file *in);
 

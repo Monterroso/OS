@@ -27,8 +27,8 @@ static void
 syscall_handler (struct intr_frame *f UNUSED)
 {
   uint32_t* args = ((uint32_t*) f->esp);
-  verify_pointer(args, f);
-  verify_pointer(args + 1, f);
+  verify_pointer(args, f, false);
+  verify_pointer(args + 1, f, false);
 
   switch (args[0]) {
 
@@ -51,7 +51,7 @@ syscall_handler (struct intr_frame *f UNUSED)
     case SYS_EXEC :
 
       // Lets be sure we check we don't have a bad pointer
-      verify_pointer((void*)(args[1]), f);
+      verify_pointer((void*)(args[1]), f, false);
 
       f->eax = process_execute(args[1]);
 
@@ -98,10 +98,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       lock_acquire (&file_lock);
 
       //lets check to be sure the buffer starts in user memory
-      verify_pointer((void*)(args[2]), f);
+      verify_pointer((void*)(args[2]), f, true);
 
       //lets check to be sure the buffer ends in user memeory
-      verify_pointer((void*)(args[2] + args[3]), f);
+      verify_pointer((void*)(args[2] + args[3]), f, true);
 
 
 
@@ -157,9 +157,9 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
 
     case SYS_CREATE :
-    	verify_pointer(args[1], f);
+    	verify_pointer(args[1], f, false);
 
-      verify_pointer(args[1] + args[2], f);
+      verify_pointer(args[1] + args[2], f, false);
 
       //filesys_create should have the functionality we want
     	f->eax = filesys_create ((char *) args[1], args[2]);
@@ -177,7 +177,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       //we first get the file structure, and open at the same time
       //using the built in filesys_open function
       //lets verify that we aren't given a bad pointer
-      verify_pointer(args[1], f);
+      verify_pointer(args[1], f, false);
 
       //lets just return if we are given a NULL name
       if (args[1] == NULL) {
@@ -218,10 +218,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       lock_acquire (&file_lock);
 
       //lets check to be sure the buffer starts in user memory
-      verify_pointer((void*)(args[2]), f);
+      verify_pointer((void*)(args[2]), f, true);
 
       //lets check to be sure the buffer ends in user memeory
-      verify_pointer((void*)(args[2] + args[3]), f);
+      verify_pointer((void*)(args[2] + args[3]), f, true);
 
       //lets check if we are reading from 0 or something else
       if (args[1] == 0) {
@@ -335,11 +335,18 @@ int addfile(struct file *in) {
 }
 
 
-void verify_pointer(void * ptr, struct intr_frame *f) {
+void verify_pointer(void * ptr, struct intr_frame *f, bool haslock) {
   struct thread * cur = thread_current();
   if (!is_user_vaddr(ptr) || pagedir_get_page(cur->pagedir, ptr) == NULL) {
     cur->info->exit_status = -1;
     f->eax = -1;
+
+    //if this has a lock, we want to free the lock, otherwise we *really* don't
+    if (haslock) {
+        lock_release (&file_lock);
+    }
+
+    // this function can only be called if we have the lock. 
     thread_exit();
   }
 }
