@@ -15,7 +15,7 @@ write-boundary write-zero write-stdin write-bad-fd exec-once exec-arg	\
 exec-multiple exec-missing exec-bad-ptr wait-simple wait-twice		\
 wait-killed wait-bad-pid multi-recurse multi-child-fd rox-simple	\
 rox-child rox-multichild bad-read bad-write bad-read2 bad-write2        \
-bad-jump bad-jump2 iloveos practice filesize seekandtell excess-stack)
+bad-jump bad-jump2 iloveos practice nullpoint seekandtell excess-stack)
 
 tests/userprog_PROGS = $(tests/userprog_TESTS) $(addprefix \
 tests/userprog/,child-simple child-args child-bad child-close child-rox)
@@ -100,7 +100,7 @@ tests/userprog/child-bad_SRC = tests/userprog/child-bad.c tests/main.c
 tests/userprog/child-close_SRC = tests/userprog/child-close.c
 tests/userprog/child-rox_SRC = tests/userprog/child-rox.c
 
-tests/userprog/filesize_SRC = tests/userprog/filesize.c tests/main.c
+tests/userprog/nullpoint_SRC = tests/userprog/nullpoint.c tests/main.c
 tests/userprog/seekandtell_SRC = tests/userprog/seekandtell.c tests/main.c
 tests/userprog/excess-stack_SRC = tests/userprog/excess-stack.c
 
@@ -139,5 +139,4 @@ tests/userprog/wait-killed_PUTFILES += tests/userprog/child-bad
 tests/userprog/rox-child_PUTFILES += tests/userprog/child-rox
 tests/userprog/rox-multichild_PUTFILES += tests/userprog/child-rox
 
-tests/userprog/filesize_PUTFILES += tests/userprog/sample.txt
 tests/userprog/seekandtell_PUTFILES += tests/userprog/sample.txt
