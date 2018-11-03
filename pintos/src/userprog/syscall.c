@@ -94,6 +94,9 @@ syscall_handler (struct intr_frame *f UNUSED)
   	// close
     case SYS_WRITE :
 
+      //lets acquire the lock
+      lock_acquire (&file_lock);
+
       //lets check to be sure the buffer starts in user memory
       verify_pointer((void*)(args[2]), f);
 
@@ -108,6 +111,9 @@ syscall_handler (struct intr_frame *f UNUSED)
         f->eax = args[3];
       } else if (args[1] == 0) {
         f->eax = -1;
+
+        //lets make sure to release if we are returning 
+        lock_release (&file_lock);
         return;        
       //The case we have a valid ID
       } else if (args[1] > 1){
@@ -121,6 +127,9 @@ syscall_handler (struct intr_frame *f UNUSED)
         //if file is null, lets set the code to -1;
         if (fi == NULL) {
           f->eax = -1;
+
+          //release if we return
+          lock_release (&file_lock);
           return;
         }
 
@@ -143,6 +152,8 @@ syscall_handler (struct intr_frame *f UNUSED)
         printf("%s", "You tried accessing a file ID that's 0 or lower");
       }
 
+      //now at the end, we release the lock
+      lock_release (&file_lock);
       break;
 
     case SYS_CREATE :
@@ -202,6 +213,10 @@ syscall_handler (struct intr_frame *f UNUSED)
     }
 
     case SYS_READ : {
+
+      //lets get our lock now
+      lock_acquire (&file_lock);
+
       //lets check to be sure the buffer starts in user memory
       verify_pointer((void*)(args[2]), f);
 
@@ -211,6 +226,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       //lets check if we are reading from 0 or something else
       if (args[1] == 0) {
         f->eax = input_getc();
+        lock_release (&file_lock);
         return;
       }
 
@@ -223,6 +239,7 @@ syscall_handler (struct intr_frame *f UNUSED)
 
       if (fi == NULL) {
         f->eax = -1;
+        lock_release (&file_lock);
         return;
       }
 
@@ -230,6 +247,8 @@ syscall_handler (struct intr_frame *f UNUSED)
       //now we read
       //file_read (struct file *file, void *buffer, off_t size)
       f->eax = file_read (fi, args[2], args[3]);
+
+      lock_release (&file_lock);
 
       break;
 
