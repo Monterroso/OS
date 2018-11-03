@@ -84,15 +84,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       break;
 
     /* TASK 3 FILE SYSCALLS */
-    //write
-    //create
-    //remove
-    //open
-    //filesize
-  	// read
-  	// seek
-  	// tell
-  	// close
+        
     case SYS_WRITE :
 
       //lets acquire the lock
@@ -134,23 +126,17 @@ syscall_handler (struct intr_frame *f UNUSED)
           return;
         }
 
-        //lets make sure we aren't writing to a directory
-        //We can check this another time.
-        /*
-        if (file_isdir()) {
-          return 0; //lets not write to anything if this is a directory
-        }
-        */
-
       	//call filewrite to write to the file, and return it's value
         //filewrite should have all of the functionality we want
         f->eax = file_write (fi, args[2], args[3]);
 
 
       }
-      //this is in case we are given a value of 0 or lower
+      //this is in case we are given a value of less than 0, which isn't valid
       else {
-        printf("%s", "You tried accessing a file ID that's 0 or lower");
+        f->eax = -1;
+        lock_release (&file_lock);
+        return;
       }
 
       //now at the end, we release the lock
@@ -231,10 +217,6 @@ syscall_handler (struct intr_frame *f UNUSED)
         return;
       }
 
-      //check valid for buffer, and that it doesn't write more than it can?
-
-      //otherwise we want to read from the file
-
       //We get the file struct of the file given the fd
       struct file *fi = thread_get_file(args[1]);
 
@@ -292,26 +274,10 @@ syscall_handler (struct intr_frame *f UNUSED)
       //now we remove it from our list;
       list_remove(&(filmp->elem));
 
-      //now we want to be sure to free the file element
-      //free_file_map(filmp);
-
       break;
     }
 
   }
-}
-
-struct file *getfile(int fd) {
-	// struct list *temp = &thread_current()->file_list;
-	// // struct list_elem tempelem = list_begin(temp);
-	// for (struct list_elem tempelem = list_begin(temp); tempelem != list_end(temp); tempelem = list_next(temp)){
-	// 	struct file tempfile = list_entry(tempelem, struct file, elem);
-	// 	if (tempfile->fd == fd) {
-	// 		return tempfile;
-	// 	}
-	// }
-	return NULL;
-
 }
 
 /*Given a file structure, we return an fd and add it to our list*/
