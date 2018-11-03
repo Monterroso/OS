@@ -207,7 +207,7 @@ thread_create (const char *name, int priority,
   t->info->pid = t->tid;
   t->info->loaded = false;
   t->info->waiting = false;
-  t->info->exit_status = (int)NULL;
+  t->info->exit_status = -1;// Lets just set the exit status to -1, change otherwise(int)NULL;
   sema_init(&(t->info->load_sema), 0);
   sema_init(&(t->info->wait_sema), 0);
 
