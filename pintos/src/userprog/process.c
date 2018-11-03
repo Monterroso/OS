@@ -281,6 +281,7 @@ load (char *file_name, void (**eip) (void), void **esp)
   file = filesys_open (temp);
   if (file == NULL)
     {
+      thread_current()->info->exit_status = -1;
       printf ("load: %s: open failed\n", temp);
       goto done;
     }

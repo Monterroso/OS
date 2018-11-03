@@ -70,6 +70,7 @@ syscall_handler (struct intr_frame *f UNUSED)
       if (info != NULL) {
         sema_down(&(info->load_sema));
         if (!info->loaded) {
+          f->eax = info->exit_status;
 	  enum intr_level old = intr_disable();
           list_remove(&(info->elem));
           intr_set_level(old);
@@ -296,11 +297,6 @@ syscall_handler (struct intr_frame *f UNUSED)
 
   }
 }
-
-
-
-
-
 
 struct file *getfile(int fd) {
 	// struct list *temp = &thread_current()->file_list;
