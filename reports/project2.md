@@ -7,22 +7,21 @@ The key difference between our design doc and the final solution is we ended up 
 # Task 2:
 We hardly strayed from Task 2's doc.  Halt and practice were simply to implement.  For exec, we didn't note what to do if the load fails: update the exit status of the thread and kill the thread.  The data structures we designed worked splendidly.
 
-# Task 3:
+# Task 3: Nothing much has changed from the design document.
 
 
 ## Contributions
 **Noah Poole**: Completed Task 1 and 2, designed 1 test.
 
-**Marcus**: 
+**Marcus**: Wrote alot of Task 3
 
-**Johnathan**: 
+**Johnathan**: Contributed to Task 3, mostly debugging. Looked at test cases to see what wasn't tested.
 
-**William**: 
+**William**: 2 tests and debugging
+
 
 
 Our group did well to not procrastinate on this project.  We had ample time to discuss and revise our document without feeling too pressured.  Still, we should get together another week earlier to have an in-depth discussion of our design document to make sure all members understand and agree.
-
-~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #Testing Report
 
