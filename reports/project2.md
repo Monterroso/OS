@@ -11,17 +11,6 @@ We hardly strayed from Task 2's doc.  `halt` and `practice` were simply to imple
 Nothing much has changed from the design document.
 
 
-## Contributions
-**Noah Poole**: Completed Task 1 and 2, designed 1 test.
-
-**Marcus**: Wrote alot of Task 3
-
-**Johnathan**: Contributed to Task 3, mostly debugging. Looked at test cases to see what wasn't tested.
-
-**William**: 2 tests and debugging
-
-Our group did well to not procrastinate on this project.  We had ample time to discuss and revise our document without feeling too pressured.  Still, we should get together another week earlier to have an in-depth discussion of our design document to make sure all members understand and agree.
-
 # Testing Report
 
 ## Test 1: `excess-stack`
@@ -35,3 +24,14 @@ Another potential kernel bug is the physical memory allocation.  Our test verifi
 This tests seek tell and filesize in Task 3. These were not explicitly tested and we needed to get these functions working before the other tests would work.
 
 ## Test 3: NullPoint
+
+## Contributions
+**Noah Poole**: Completed Task 1 and 2, designed 1 test.
+
+**Marcus**: Wrote alot of Task 3
+
+**Johnathan**: Contributed to Task 3, mostly debugging. Looked at test cases to see what wasn't tested.
+
+**William**: 2 tests and debugging
+
+Our group did well to not procrastinate on this project.  We had ample time to discuss and revise our document without feeling too pressured.  Still, we should get together another week earlier to have an in-depth discussion of our design document to make sure all members understand and agree.
