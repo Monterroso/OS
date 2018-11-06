@@ -65,7 +65,7 @@ Another potential kernel bug is the physical memory allocation.  Our test verifi
 This tests seek tell and filesize in Task 3. These were not explicitly tested and we needed to get these functions working before the other tests would work. The test creates a file. We use seek to move to a position and call tell to identify our position. By comparing the position used when calling seek and the value returned by tell, we can identify whether both syscalls work. To test filesize, we write text to the file and the syscall will return amount of bytes it wrote. We compare this value to what is returned by filesize. 
 
 Output
-'''
+~~~
 Copying tests/userprog/seekandtell to scratch partition...
 Copying ../../tests/userprog/sample.txt to scratch partition...
 qemu -hda /tmp/SPG1M3l4RD.dsk -m 4 -net none -nographic -monitor null
@@ -103,12 +103,12 @@ Console: 1007 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
-'''
+~~~
 
 Result: 
-'''
+~~~
 PASS
-'''
+~~~
 
 Because this test tests the basic functionality of these syscalls, a kernel bug this test would catch would be an incorrect implementation of any of the syscalls. 
 
@@ -116,7 +116,7 @@ Because this test tests the basic functionality of these syscalls, a kernel bug 
 This test tries to write to a file with an uninitialized buffer. In our test, we create a file and and try to write to it. If the write syscall passes without crashing, then we fail the test as the expected result is that it should exit trying to perform this operation. 
 
 Output
-'''
+~~~
 Copying tests/userprog/nullpoint to scratch partition...
 qemu -hda /tmp/xQmVYDzOqb.dsk -m 4 -net none -nographic -monitor null
 PiLo hda1
@@ -151,12 +151,12 @@ Console: 928 characters output
 Keyboard: 0 keys pressed
 Exception: 0 page faults
 Powering off...
-'''
+~~~
 
 Result:
-'''
+~~~
 PASS
-'''
+~~~
 
 A kernel bug this test would catch is when we try to call write on a buffer that doesn't exist or when we call write on an uninitialized buffer. In either of those cases, this test will fail. 
 
