@@ -8,7 +8,7 @@ The key difference between our design doc and the final solution is we ended up 
 We hardly strayed from Task 2's doc.  `halt` and `practice` were simply to implement.  For `exec`, we didn't note what to do if the load fails: update the exit status of the thread and kill the thread.  The data structures we designed worked splendidly.
 
 # Task 3:
-Nothing much has changed from the design document.
+One of the main issues we ran into was the difficulty of properly printing the correct outputs and returning the correct error value. We originally wanted to implement most of our functionality within `Syscall.c`, but the difficulty arose when we tried to set our return value and our error messages, because what we wanted was for all of that to be handled when the thread exited in the kill process function, and that was not in `Syscall.c`. So we modified process exit in `process.c` in order to fulfil that requirement. Other than that, we did not have a significant issue implementing the file system functionality. We did also use a linked list in order to store all of our file handlers with their appropriate fd values, and we added a structure with a list element and the file handler and fd in order to serve as the elements in that linked list.
 
 
 # Testing Report
