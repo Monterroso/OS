@@ -31,4 +31,7 @@ One kernel bug that would conflict with this test is if the kernel adds its own 
 
 Another potential kernel bug is the physical memory allocation.  Our test verifies that the thread's args in virtual memory do not pass a certain virtual address.  While this may pass, the kernel may poorly allocate physical memory and waste space while still mapping efficiently to virtual memory.  This would result in false positives; poor memory use would still pass the test.
 
-##Test 2:
+###Test 2: SeekandTell
+This tests seek tell and filesize in Task 3. These were not explicitly tested and we needed to get these functions working before the other tests would work.
+
+###Test 3: NullPoint
