@@ -47,8 +47,22 @@ In `block_write()`, we will add the block to `cached_blocks`, removing the LRU b
 # Task 2: Extensible files
 
 ## Data Structures and Functions
+inode.c
 ```
-
+struct inode_disk
+  block_sector_t direct[125];           
+  block_sector_t indirect;             
+  block_sector_t doubly_indirect;       
+  unsigned magic;  //different number    
+ 
+struct inode
+  remove inode_disk data  
+```
+free-map.c
+```
+static struct lock *maplock;
+bool free_map_allocate_extra (size_t cnt, block_sector_t *sectorp)
+//same as free_map_allocate but stores each cnt instead of just first one
 ```
 ## Algorithms
 
