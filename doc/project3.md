@@ -84,9 +84,20 @@ The `free_map_allocate_extra()` was designed to prevent fragmentation and was th
 
 ## Data Structures and Functions
 ```
+inode.c
+struct disk_inode {
+  boolean isdir; //true if diretory, false if file
+}
 
+syscall.c
+syscall_handler (struct intr_frame *f UNUSED)
+
+file.c
+fileinumber(struct file) 
+fileisdir(struct file)
 ```  
 ## Algorithms
+We will need to modify `syscall_handler` to implement the new syscalls by calling their proper helper functions. 'readdir' will call 'dir_readdir()' from directory.c. 'inumber' will return the sector number of the inode and 'isdir' will return the isdir value from disk_inode.
 
 
 ## Synchronization
