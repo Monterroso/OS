@@ -13,12 +13,14 @@ Design Document for Project 3: File Systems
 ## Data Structures and Functions
 ```
 block.c
-struct list * cached_blocks;
+struct list * cached_sectors;
 int cache_size = 0;
 
 struct cache_entry {
   struct list_elem list_elem;
   struct block * b;
+  int data[BLOCK_SECTOR_SIZE];
+  struct lock * lock;
   int sector;
   int dirty;
   int tou;
@@ -30,19 +32,22 @@ block_read();
 
 ```  
 ## Algorithms
-Most of the code will be in `block.c` as it contains the most basic functions for reading and writing to disk.  We need to modify the block structure to include a `cache_entry` so each block can be added to our list of cached blocks.  We will create a new structure called a `cache_entry` which will contain a block's cache data and metadata.  We need to add a dirty bit so we can know if a block needs to be written back to disk when flushed from the cache.  As well, `tou` keeps track of a block's time of use so we can implement a LRU replacement policy.
+Most of the code will be in `block.c` as it contains the most basic functions for reading and writing to disk.  We will create a new structure called a `cache_entry` which will contain a sector's cache data and metadata.  We need to add a dirty bit so we can know if a sector needs to be written back to disk when flushed from the cache.  As well, `tou` keeps track of a sector's time of use so we can implement a LRU replacement policy.  Anytime a sector is accessed, we will increment `tou` for all other cache entries.
 
-In `block_write()`, we will add the block to `cached_blocks`, removing the LRU block if we have a capacity miss.  
+In `block_write()` and `block_read()`, we will add the sector to `cached_sectors`, removing the LRU sector if we have a capacity miss.  If the replaced sector had the dirty bit checked, we call `block->ops->write` on the cached data.  We acquire the lock for that `cache_entry`.  If the sector is already in the list, we will set its `tou` to 0.  As well, we increment the `tou` of every other entry.  Now, we can read or write the data in the `cache_entry`.  If we write to the struct, we need to set the dirty bit.  Finally, we release the lock.
 
 ## Synchronization
-
+We have included a lock for each `cache_entry`.  At the beginning of any read or write operation, we must acquire the lock of that sector first.  When we finish the operation, we may release the lock.  This prevents any concurrent accesses of the same sector but allows concurrency for different sectors.
 
 ## Rationale
 ### Advantages
-- 
+- Simple list abstraction for cache
+- LRU policy provides good hit and miss rates
+- Lock for each sector allows for as much concurrency as possible
 
 ### Disadvantages
-- 
+- Replacement policy does not account for temporal or spacial locality
+- Iterating through cache to increment `tou` on every access may be slow
 
 # Task 2: Extensible files
 
