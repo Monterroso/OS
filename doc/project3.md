@@ -111,3 +111,4 @@ We will need to modify `syscall_handler` to implement the new syscalls by callin
 - 
 
 # Additional Questions
+To implement a write behind cache, you can write dirty blocks to disk when the disk isn't busy. When another process needs to go to disk, we have to finish writing the dirty block from the cache. In order to reduce the chances of this, we can restrict ourselves to writing to disk every 1 minute. To implement read ahead cache, you can create a list of the most used files that aren't already in a cache, and then fetch the most used data blocks ahead of time. Everytime another file is put into the cache, it will add to the count of the list of most used files.
