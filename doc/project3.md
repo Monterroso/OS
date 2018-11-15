@@ -92,6 +92,7 @@ The `free_map_allocate_extra()` was designed to prevent fragmentation and was th
 inode.c
 struct disk_inode {
   boolean isdir; //true if diretory, false if file
+  int numfiles; //empty dir if 0. 
 }
 
 syscall.c
@@ -100,20 +101,31 @@ syscall_handler (struct intr_frame *f UNUSED)
 file.c
 fileinumber(struct file) 
 fileisdir(struct file)
+
+thread.c
+struct thread{
+	char* currdirectory; //keep track which dir it is in
+}
+
 ```  
 ## Algorithms
 We will need to modify `syscall_handler` to implement the new syscalls by calling their proper helper functions. 'readdir' will call 'dir_readdir()' from directory.c. 'inumber' will return the sector number of the inode and 'isdir' will return the isdir value from disk_inode.
 
+For mkdir, we will do what we do with creating a file, but instead we set isdir to false instead. For chdir, we will keep track of a thread's current directory in the thread struct. We will change this value when we call chdir. 
+
+In addition, many open, remove, and create in filesys have to be modified to work not only on just the root directory. 
 
 ## Synchronization
-
+We will not be able to remove a directory if there are any files or other directories in it. We do this by keeping track of the number of elements in the directory (numFiles) and only remove when this value is 0. 
 
 ## Rationale
+Another way to check whether a directory is empty or not is by using a boolean, but ultimately, it is easier to check an empty directory by incrementing and decrementing numFiles when creating or removing a file/directory. 
+
 ### Advantages
-- 
+- Consistent always using absolute path
 
 ### Disadvantages
-- 
+- Have to trace through file path
 
 # Additional Questions
 To implement a write behind cache, you can write dirty blocks to disk when the disk isn't busy. When another process needs to go to disk, we have to finish writing the dirty block from the cache. In order to reduce the chances of this, we can restrict ourselves to writing to disk every 1 minute. To implement read ahead cache, you can create a list of the most used files that aren't already in a cache, and then fetch the most used data blocks ahead of time. Everytime another file is put into the cache, it will add to the count of the list of most used files.
