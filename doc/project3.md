@@ -52,7 +52,7 @@ inode.c
 struct inode_disk
   block_sector_t direct[125];           
   block_sector_t indirect;             
-  block_sector_t doubly_indirect;       
+  block_sector_t double_indirect;       
   unsigned magic;  //different number    
  
 struct inode
@@ -65,17 +65,20 @@ bool free_map_allocate_extra (size_t cnt, block_sector_t *sectorp)
 //same as free_map_allocate but stores each cnt instead of just first one
 ```
 ## Algorithms
-
+We remove data from inode so it can always be accessed by the buffer cache.
+The problem with the current implementation is that the system will search and only use a blog that is big enough to fit everything. This can lead to fragmentation. To solve this, we will write `free_map_allocate_extra()` which will solve that problem. It will see if there is enough blocks to put the data in and if it can insert the data, it will store the location of the data too for future reference. We will be changing the structure of inode_disk and inode's initializers so when the program needs to allocate more data in inode_write_at(), it's done with the new modified data structure. 
 
 ## Synchronization
-
+We add a lock to free-map to guarantee atomicity of the allocation operations. We dont want things partially allocated because that would lead to alot of problems.
 
 ## Rationale
+The `free_map_allocate_extra()` was designed to prevent fragmentation and was the most direct solution. A lock on free-map itself also solves consistency problems if multiple things want this resource. The removal of `inode_disk data` was mostly done so it's more accessible, as in not just within that inode. The pointers put into `inode_disk` are there to make the data accesses faster.
+
 ### Advantages
-- 
+- Will not have to sort data each time there is something inserted or removed.
 
 ### Disadvantages
-- 
+- We have to search through all nodes when inserting or removing.
 
 # Task 3: Subdirectories
 
