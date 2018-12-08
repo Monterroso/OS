@@ -1,5 +1,4 @@
 #include "filesys/inode.h"
-#include <list.h>
 #include <debug.h>
 #include <round.h>
 #include <string.h>
@@ -10,15 +9,24 @@
 /* Identifies an inode. */
 #define INODE_MAGIC 0x494e4f44
 
+#define DIRECT_CNT 123
+#define INDIRECT_CNT 1
+#define DBL_INDIRECT_CNT 1
+#define SECTOR_CNT (DIRECT_CNT + INDIRECT_CNT + DBL_INDIRECT_CNT)
+
+#define POINTS_PER_SEC 128
+
+
+
 /* On-disk inode.
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
-struct inode_disk
-  {
-    block_sector_t start;               /* First data sector. */
-    off_t length;                       /* File size in bytes. */
-    unsigned magic;                     /* Magic number. */
-    uint32_t unused[125];               /* Not used. */
-  };
+ struct inode_disk
+   {
+     block_sector_t sectors[SECTOR_CNT]; /* Sectors. */
+     enum inode_type type;               /* FILE_INODE or DIR_INODE. */
+     off_t length;                       /* File size in bytes. */
+     unsigned magic;                     /* Magic number. */
+   };
 
 /* Returns the number of sectors to allocate for an inode SIZE
    bytes long. */
@@ -43,6 +51,7 @@ struct inode
    within INODE.
    Returns -1 if INODE does not contain data for a byte at offset
    POS. */
+
 static block_sector_t
 byte_to_sector (const struct inode *inode, off_t pos)
 {
@@ -343,3 +352,299 @@ inode_length (const struct inode *inode)
 {
   return inode->data.length;
 }
+
+
+/*Given a length, we calculate how many extra pointers are used*/
+int
+get_extra_pointers(off_t pos) {
+
+  pos -= DIRECT_CNT;
+
+  off_t extra_pointers = 0;
+
+  int i = 0;
+
+  //we check if the direct pointers can cover it
+  if (pos > 0 ) {
+    //this checks for pointers to pointers that we will need to use
+
+    for(i = 0; i < INDIRECT_CNT; i++) {
+
+      //each indirect pointer requires one pointer
+      extra_pointers++;
+
+      //we decreate the amount that we need
+      pos -= POINTS_PER_SEC;
+
+      //we want to check if we don't have enough for a full indirect block
+      if (pos <= 0) {
+        break;
+      }
+    }
+  }
+
+  if (pos > 0) {
+    int j = 0;
+
+    for(i = 0; i < DBL_INDIRECT_CNT; i++) {
+
+      //each indirect pointer requires one pointer
+      extra_pointers++;
+
+      for(j = 0; j < POINTS_PER_SEC; j++) {
+
+        extra_pointers++;
+        //we decreate the amount that we need
+        pos -= POINTS_PER_SEC;
+
+        //we want to check if we don't have enough for a full indirect block
+        if (pos <= 0) {
+          break;
+        }
+      }
+    }
+  }
+
+  return extra_pointers;
+}
+
+/* Calculates the number of blocks that we need in order to extend the
+inode in question by pos amount. It also includes the number of blocks
+to serve as holders for our pointers*/
+int
+num_sectors_needed(const struct inode *inode, off_t pos) {
+
+  //DIV_ROUND_UP should take care of the rounding here
+
+  cur_block_num = DIV_ROUND_UP (inode->data.length, BLOCK_SECTOR_SIZE);
+
+  need_block_num = DIV_ROUND_UP(pos, BLOCK_SECTOR_SIZE);
+
+  int extra_needed = get_extra_pointers(pos) - get_extra_pointers(inode.length);
+
+  if (extra_needed < 0) {
+    extra_needed = 0;
+  }
+
+  //now we have accounted for all of our extra pointers.
+
+  if (cur_block_num >= need_block_num) {
+    return 0;
+  }
+  else {
+    return need_block_num - cur_block_num + extra_needed;
+  }
+}
+
+
+/*We are given an indoe, and we find the sector which corresponds to the
+pos that we are given. Serves as a replacement for byte_to_sector*/
+static block_sector_t
+byte_to_sector_new (const struct inode *inode, off_t pos) {
+
+  //the new off is how many sectors we will use
+  int new_off = DIV_ROUND_UP((pos, BLOCK_SIZE);
+
+  //if the file is smaller, we just want to return null
+  if (inode->data.length <= new_off) {
+    return null;
+  }
+
+  //if it's a direct pointer, we return the direct pointer
+  if (new_off < DIRECT_CNT) {
+    return inode->sectors[new_off];
+  }
+
+
+  new_off -= DIRECT_CNT;
+
+  else if (new_off < INDIRECT_CNT * POINTS_PER_SEC) {
+    int indir_counter = DIV_ROUND_UP(new_off, INDIRECT_CNT * POINTS_PER_SEC) - 1;
+    int indir_elem = new_off % POINTS_PER_SEC;
+
+    return inode->block.data[DIRECT_CNT + indir_counter].blocks[indir_elem];
+  }
+
+
+
+  new_off -= INDIRECT_CNT * POINTS_PER_SEC;
+
+  //now however, we know it's in a double pointeer
+  ASSERT(new_off < DBL_INDIRECT_CNT * POINTS_PER_SEC * POINTS_PER_SEC);
+
+    int doub_counter = DIV_ROUND_UP(new_off, POINTS_PER_SEC * POINTS_PER_SEC) - 1;
+
+    int double_elem = new_off % POINTS_PER_SEC * POINTS_PER_SEC;
+
+    int sing_elem = double_elem % POINTS_PER_SEC;
+
+    return blocks[directpointers + indirectpointers + doubcounter].blocks[double_elem].blocks[sing_elem]
+
+
+  Afterthis, we should be done and have returned the corresponding sector.
+
+}
+
+/*
+  static block_sector_t
+  count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_locs)
+
+  Takes in an inode and "counts" starting from the direct pointers, all the way
+  down the list until we get to our indirect pointer, then it counts the ones
+  there in a bfs sort of manner.
+
+  If we find the one we want and don't need to extend, we just return the block.
+
+  If we need to extend, continue to iterate through the inode pointers, and add
+
+  the reserved sectors to those pointers. We already make sure that we set the
+
+  bits in the sector data to be 0, and once we reach the end, we return the
+
+  pointer to that block.
+
+  this function has a number of sectors, and we need to allocate them.
+  this means that we first need to zero them out.
+
+  first, we get how many sectors we are currently using
+  this is equal to the length floor divisioned by the size of a block
+  we then increase this count by one if the modulo isn't 0.
+  num_blocks_using = length // blocksize
+  if length % blocksize != 0
+    num_blocks_using++
+
+  used_so_far = 0
+
+
+  alternate approach, we just loop through each possible pointer, and
+  then add if it's filled, and we don't if it's not, or we have allocated all that we need to allocate.
+
+  just loop through all blocks
+  check if direct, indirect, or double indirect.
+
+  num_placed = 0
+
+  //this keeps track of the pointers we've iterated through
+  //so far
+  num_iterated = 0
+
+
+  for(i = 0; i < numofallpointers; i++)
+
+    //we check if direct pointer, indirect, or doubleindirect
+
+    if i < numofdirectpointers
+
+      iterated_through++
+
+      //if have iterated through more pointers than length, that means
+      that we need to allocate a pointer.
+      if iterated_through > used_so_far
+
+        //since this is a direct pointer, we just add to the direct pointer
+        block[i] = sector_loc[num_placed]
+
+        num_placed++
+
+
+    else if i < numofdirectpointers + numofindirect * sizeofindirect
+      for(j = 0; j < sizeofindirectpointer; j++)
+
+        iterated_through++
+
+        if iterated_through > used_so_far
+
+          //since this is an indirect pointer, we add to the pointer there
+          block[i].block[j] = sector_loc[num_placed]
+
+          //and we want to show we used one additional one
+          num_placed++
+
+
+
+
+
+    else if i < numofdirectpointers + numofindirect * sizeofindirect
+      + numofdoubledirect * sizeofdoubleindirect
+
+      for(j = 0; j < sizeofindirectpointer; j++)
+
+        for(k = 0; k < sizeofindirectpointer; k++)
+
+          iterated_through++
+
+          if iterated_through > used_so_far
+
+            //since this is an doubleindirect pointer, we add to the pointer there
+            block[i].block[j].block[k] = sector_loc[num_placed]
+
+            //and we want to show we used one additional one
+            num_placed++
+
+            if num_placed >= num_sects
+              return
+
+
+
+
+
+
+  we then check the direct pointers and see if it falls there
+  if so, we then want to start adding blocks to the direct pointers
+  going in a loop and adding them as locations to our sector.
+  if num_blocks_using < directpointers
+    for (i = num_blocks_using; i < directpointers; i++)
+      sector[i] = sector_locs[i - num_blocks_using]
+
+      //we also keep track of how many pointers we have used so far
+      used_so_far++
+
+      //if used so far is equal to the number of blocks we want to
+      //allocate, then we are done
+      if used_so_far == num_sects
+        return sector_locs[i];
+
+
+
+
+
+  After this, we are onto our indirect pointers
+
+  //this checks if we have free pointers inside indirect pointers
+  if num_blocks_using < directpointers + indirectpointers * indirectpointersize
+
+  we want to be sure we start at the indirect node that is not filled
+
+  we loop through all of our indirect pointers
+  for (i = 0, i < indirectpointers; i++)
+
+    //we loop through each pointer within an indirect pointers
+    for (j = 0, j < sizeofindirectpointer; j++)
+
+      //this references the start of our indirect pointers
+      blocks[directpointers + i ].blocks[j] =
+
+  then we do the same for our indirect pointers
+
+  then the same for our doubleindirect pointers
+
+
+*/
+
+/*
+static block_sector_t
+get_data_block(const struct inode *inode, off_t pos, bool extend)
+
+We first get the blocks we need //num_sectors_needed(const struct inode *inode, off_t pos)
+  if this fails, aka we would need more than 8Mib, we return null
+
+If we can't extend, and it's greater than the blocks we have
+  we return null
+
+Now, we try to allocate the blocks //get_sectors(int sectors, int[] sector_locs)
+  if this fails, return 0
+
+If this succeeds, we just set the pointers within our inode structure
+with the pointers we got from the previous function, and then return
+whatever that happens to get //count_alloc(const struct inode *inode, off_t num_sects, int[] reserved_sects)
+*/
