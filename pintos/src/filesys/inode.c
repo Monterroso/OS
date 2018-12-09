@@ -14,6 +14,7 @@
 #define DIRECT_CNT 123
 #define INDIRECT_CNT 1
 #define DBL_INDIRECT_CNT 1
+
 #define SECTOR_CNT (DIRECT_CNT + INDIRECT_CNT + DBL_INDIRECT_CNT)
 
 #define POINTS_PER_SEC 128
@@ -601,7 +602,7 @@ byte_to_sector_new (const struct inode *inode, off_t pos) {
 
   int double_elem = new_off % (POINTS_PER_SEC * POINTS_PER_SEC);
 
-  int sing_elem = double_elem % POINTS_PER_SEC;
+  int single_elem = double_elem % POINTS_PER_SEC;
 
   //we get the sector within our disk node that it's located in
   block_sector_t outer = inode->block.data[directpointers + indirectpointers + doubcounter];
@@ -618,16 +619,16 @@ byte_to_sector_new (const struct inode *inode, off_t pos) {
 /*Given an inode, a number of sectors, and an array containing sectors
 which are reserved, we add those sectors to this inode's data. */
 void
-count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_locs) {
+count_alloc(const struct inode *inode, off_t num_sects, block_sector_t sector_locs[]) {
 
-  num_blocks_using = DIV_ROUND_UP(inode->data.length, BLOCK_SECTOR_SIZE);
+  int num_blocks_using = DIV_ROUND_UP(inode->data.length, BLOCK_SECTOR_SIZE);
 
   //number we have placed
-  num_placed = 0;
+  int num_placed = 0;
 
   //this keeps track of the pointers we've iterated through
   //so far
-  num_iterated = 0;
+  int iterated_through = 0;
 
   int i= 0;
   int j = 0;
@@ -643,7 +644,7 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
       if (iterated_through > num_blocks_using)
 
         //since this is a direct pointer, we just add to the direct pointer
-        inode->block.data[i] = sector_loc[num_placed];
+        inode->block.data[i] = sector_locs[num_placed];
 
         num_placed++;
 
@@ -657,13 +658,13 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
 
         iterated_through++;
 
-        if (iterated_through > num_blocks_using);
+        if (iterated_through > num_blocks_using) {
 
           //since this is an indirect pointer, we add to the pointer there
-          //inode->data.block[i][j] = sector_loc[num_placed];
+          //inode->data.block[i][j] = sector_locs[num_placed];
 
-          
-          write_single_elem (i, j, sector_loc[num_placed]) {
+
+          write_single_elem (i, j, sector_locs[num_placed]);
 
 
           //and we want to show we used one additional one
@@ -673,6 +674,7 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
             return;
           }
         }
+      }
     }
     //otherwise, we know we're in a double pointer
 
@@ -686,7 +688,7 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
           if (iterated_through > used_so_far) {
 
             //since this is an doubleindirect pointer, we add to the pointer there
-            inode->data.block[i][j][k] = sector_loc[num_placed];
+            inode->data.block[i][j][k] = sector_locs[num_placed];
 
             //and we want to show we used one additional one
             num_placed++;
@@ -714,7 +716,7 @@ get_data_block(const struct inode *inode, off_t pos, bool extend) {
 
   //If the number of sectors we need is larger than the ones we have
   //and we can't extend, or it exceeds the file size, we return NULL
-  if ((sectors_need > sectors_have)
+  if ((sectors_need > sectors_have
   && extend == false) || sectors_need == -1) {
     return NULL;
   }
