@@ -125,6 +125,7 @@ block_read (struct block *block, block_sector_t sector, void *buffer)
   block->read_cnt++;
 }
 
+
 /* Write sector SECTOR to BLOCK from BUFFER, which must contain
    BLOCK_SECTOR_SIZE bytes.  Returns after the block device has
    acknowledged receiving the data.
@@ -220,4 +221,3 @@ list_elem_to_block (struct list_elem *list_elem)
           ? list_entry (list_elem, struct block, list_elem)
           : NULL);
 }
-

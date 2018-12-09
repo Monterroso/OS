@@ -404,7 +404,7 @@ bit_get_sectors(const struct bitmap *b, int sectors, block_sector_t * sector_loc
 
   //if we don't find enough of them, we immediately return bitmaperror
   if (found != sectors) {
-    return BITMAP_ERROR;
+    return NULL;
   }
 
   //We make sure we flip all the bits that we have, to reserve them

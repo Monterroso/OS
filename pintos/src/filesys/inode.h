@@ -22,10 +22,11 @@ off_t inode_length (const struct inode *);
 
 
 //Here we have all of the functions I am implimenting
-// int get_extra_pointers(off_t);
-// int num_sectors_needed(const struct inode *, off_t);
-// void count_alloc(const struct inode *, off_t , block_sector_t * );
-// block_sector_t* get_data_block(const struct inode *, off_t, bool);
+int get_extra_pointers(off_t);
+int num_sectors_needed(const struct inode *, off_t);
+void count_alloc(const struct inode *, off_t , block_sector_t * );
+block_sector_t* get_data_block(const struct inode *, off_t, bool);
+block_sector_t byte_to_sector_new (const struct inode *, off_t);
 
 
 #endif /* filesys/inode.h */

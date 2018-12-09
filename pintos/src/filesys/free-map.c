@@ -84,10 +84,11 @@ free_map_create (void)
     PANIC ("can't write free map");
 }
 
-/*This function takes in the freemap, num sectors needed, array to hold sectors*/
+/*This function takes in the freemap, num sectors needed, array to hold sectors
+It returns an array of the pointers that we need*/
 block_sector_t*
 get_sectors(int sectors, block_sector_t * sector_locs) {
-  if (sectors != (block_sector_t*)BITMAP_ERROR
+  if (sectors != 0
       && free_map_file != NULL
       && bitmap_write (free_map, free_map_file)) {
         return bit_get_sectors(free_map, sectors, sector_locs);
@@ -95,5 +96,4 @@ get_sectors(int sectors, block_sector_t * sector_locs) {
   else {
     return NULL;
   }
-
 }
