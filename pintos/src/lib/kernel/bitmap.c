@@ -6,6 +6,7 @@
 #include "threads/malloc.h"
 #ifdef FILESYS
 #include "filesys/file.h"
+
 #endif
 
 /* Element type.
@@ -367,4 +368,49 @@ void
 bitmap_dump (const struct bitmap *b)
 {
   hex_dump (0, b->bits, byte_cnt (b->bit_cnt), false);
+}
+
+/*This gets sectors from the free map, and flips them if they are gotten*/
+block_sector_t *
+bit_get_sectors(const struct bitmap *b, int sectors, block_sector_t * sector_locs)
+{
+
+
+  //this is the last element of our freemap
+  off_t last = byte_cnt( b->bit_cnt );
+
+  off_t i;
+
+  //this is how many blocks we have found so far
+  off_t found = 0;
+
+  for (i = 0; i <= last; i++)
+    //we check if we have found the number we need to find
+    //if so, we break out of this loop.
+    if (found == sectors) {
+      break;
+    }
+    //otherwise we continue
+
+    //if the bit is free
+    if (bitmap_test (b, i) == false)
+      //we want to put that value into our sector_locs
+      sector_locs[found] = i;
+
+      //this means that we found a block we can use
+
+      //increase the counter
+      found += 1;
+
+  //if we don't find enough of them, we immediately return bitmaperror
+  if (found != sectors) {
+    return BITMAP_ERROR;
+  }
+
+  //We make sure we flip all the bits that we have, to reserve them
+  for (i = 0; i <= sectors; i++) {
+    bitmap_flip (b, sector_locs[i]);
+  }
+
+  return sector_locs;
 }

@@ -1,4 +1,5 @@
 #include "filesys/inode.h"
+#include <list.h>
 #include <debug.h>
 #include <round.h>
 #include <string.h>
@@ -16,13 +17,20 @@
 
 #define POINTS_PER_SEC 128
 
-#define MAX_BLOCKS (DIRECT_CNT + (INDIRECT_CNT * POINTS_PER_SEC) +
-(DBL_INDIRECT_CNT * POINTS_PER_SEC * POINTS_PER_SEC))
+#define MAX_BLOCKS (DIRECT_CNT + (INDIRECT_CNT * POINTS_PER_SEC) + (DBL_INDIRECT_CNT * POINTS_PER_SEC * POINTS_PER_SEC))
 
 
 
 /* On-disk inode.
    Must be exactly BLOCK_SECTOR_SIZE bytes long. */
+  //  struct inode_disk
+  // {
+  //   block_sector_t start;               /* First data sector. */
+  //   off_t length;                       /* File size in bytes. */
+  //   unsigned magic;                     /* Magic number. */
+  //   uint32_t unused[125];               /* Not used. */
+  // };
+
  struct inode_disk
    {
      block_sector_t sectors[SECTOR_CNT]; /* Sectors. */
@@ -40,15 +48,36 @@ bytes_to_sectors (off_t size)
 }
 
 /* In-memory inode. */
+/* In-memory inode. */
+// struct inode
+//   {
+//     struct list_elem elem;              /* Element in inode list. */
+//     block_sector_t sector;              /* Sector number of disk location. */
+//     int open_cnt;                       /* Number of openers. */
+//     bool removed;                       /* True if deleted, false otherwise. */
+//     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
+//     struct inode_disk data;             /* Inode content. */
+//   };
+
 struct inode
   {
     struct list_elem elem;              /* Element in inode list. */
     block_sector_t sector;              /* Sector number of disk location. */
     int open_cnt;                       /* Number of openers. */
     bool removed;                       /* True if deleted, false otherwise. */
+    struct lock lock;                   /* Protects the inode. */
+
+    struct lock deny_write_lock;        /* Protects members below. */
+    struct condition no_writers_cond;   /* Signaled when no writers. */
     int deny_write_cnt;                 /* 0: writes ok, >0: deny writes. */
+    int writer_cnt;                     /* Number of writers. */
+
     struct inode_disk data;             /* Inode content. */
   };
+
+struct inode_disk*
+get_disk(const struct inode *inode)
+
 
 /* Returns the block device sector that contains byte offset POS
    within INODE.
@@ -94,12 +123,30 @@ inode_create (block_sector_t sector, off_t length)
   ASSERT (sizeof *disk_inode == BLOCK_SECTOR_SIZE);
 
   disk_inode = calloc (1, sizeof *disk_inode);
+
+
+  //and an array to hold all of our bits.
+
+
   if (disk_inode != NULL)
     {
-      size_t sectors = bytes_to_sectors (length);
+      //size_t sectors = bytes_to_sectors (length);
+
+      //we have the number of sectors equal to this.
+      size_t sectors = get_extra_pointers(length)
+      + DIV_ROUND_UP(length, BLOCK_SIZE);
+
       disk_inode->length = length;
       disk_inode->magic = INODE_MAGIC;
-      if (free_map_allocate (sectors, &disk_inode->start))
+
+      //instead of free map allocate, we will use bit_get_sectors
+      //to see if we are able to access the number of
+      //if (free_map_allocate (sectors, &disk_inode->start))
+
+      //so we need to get the number of pointers
+      block_sector_t * sector_locs = malloc(sectors * sizeof(block_sector_t));
+
+      if( get_sectors(blocks_needed, sector_locs) == NULL) {
         {
           block_write (fs_device, sector, disk_inode);
           if (sectors > 0)
@@ -108,12 +155,17 @@ inode_create (block_sector_t sector, off_t length)
               size_t i;
 
               for (i = 0; i < sectors; i++)
-                block_write (fs_device, disk_inode->start + i, zeros);
+                //change to write to these sectors
+                //block_write (fs_device, disk_inode.start + i, zeros);
+
+                block_write (fs_device, sector_locs[i], zeros);
             }
           success = true;
+
         }
       free (disk_inode);
     }
+  free (sector_locs);
   return success;
 }
 
@@ -188,9 +240,15 @@ inode_close (struct inode *inode)
       /* Deallocate blocks if removed. */
       if (inode->removed)
         {
+          //we need to iterate through all of our nodes and release them.
+
           free_map_release (inode->sector, 1);
-          free_map_release (inode->data.start,
-                            bytes_to_sectors (inode->data.length));
+
+
+          // free_map_release (inode->data.start,
+          //                   bytes_to_sectors (inode->data.length));
+
+          //now we go, and free all of our blocks. 
         }
 
       free (inode);
@@ -580,31 +638,30 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
 }
 
 
-static block_sector_t
-get_data_block(const struct inode *inode, off_t pos, bool extend)
+block_sector_t*
+get_data_block(const struct inode *inode, off_t pos, bool extend) {
 
 
-int sectors_need = num_sectors_needed(inode, pos);
+  int sectors_need = num_sectors_needed(inode, pos);
 
-//If the number of sectors we need is larger than the ones we have
-//and we can't extend, or it exceeds the file size, we return NULL
-if ((sectors_need > DIV_ROUND_UP(inode->data.length, BLOCK_SIZE)
-&& extend == false) || sectors_need == -1) {
-  return null;
-}
+  //If the number of sectors we need is larger than the ones we have
+  //and we can't extend, or it exceeds the file size, we return NULL
+  if ((sectors_need > DIV_ROUND_UP(inode->data.length, BLOCK_SIZE)
+  && extend == false) || sectors_need == -1) {
+    return NULL;
+  }
 
-//now we allocate the blocks
+  //now we allocate the blocks
 
-int[] sector_locs = calloc(1, sectors_need);
+  int[] sector_locs = calloc(1, sectors_need);
 
-block_sector_t* sectors = get_sectors(sectors_need, int[] sector_locs);
+  block_sector_t* sectors = get_sectors(sectors_need, int[] sector_locs);
 
-//if it fails, we return
-if (sectors == NULL) {
-  return null;
-}
+  //if it fails, we return
+  if (sectors == NULL) {
+    return NULL;
+  }
 
-//now, we just allocate our sectors
-count_alloc(inode, sectors_need, sector_locs);
-
+  //now, we just allocate our sectors
+  count_alloc(inode, sectors_need, sector_locs);
 }

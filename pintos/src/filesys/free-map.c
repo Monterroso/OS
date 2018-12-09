@@ -84,45 +84,16 @@ free_map_create (void)
     PANIC ("can't write free map");
 }
 
-/*This function takesn in the freemap, num sectors needed, array to hold sectors*/
+/*This function takes in the freemap, num sectors needed, array to hold sectors*/
 block_sector_t*
-get_sectors(int sectors, block_sector_t[] sector_locs) {
-
-  //this is the last element of our freemap
-  size_t last = free_map->bit_cnt;
-
-  size_t i;
-
-  //this is how many blocks we have found so far
-  int found = 0;
-
-  for (i = 0; i <= last; i++)
-    //we check if we have found the number we need to find
-    //if so, we break out of this loop.
-    if (found == sectors) {
-      break;
-    }
-    //otherwise we continue
-
-    //if the bit is free
-    if (bitmap_test (free_map, i) == false)
-      //we want to put that value into our sector_locs
-      sector_locs[found] = i;
-
-      //this means that we found a block we can use
-
-      //increase the counter
-      found += 1;
-
-  //if we don't find enough of them, we immediately return null
-  if (found != sector) {
-    return null;
+get_sectors(int sectors, block_sector_t * sector_locs) {
+  if (sectors != (block_sector_t*)BITMAP_ERROR
+      && free_map_file != NULL
+      && bitmap_write (free_map, free_map_file)) {
+        return bit_get_sectors(free_map, sectors, sector_locs);
+      }
+  else {
+    return NULL;
   }
 
-  //We make sure we flip all the bits that we have, to reserve them
-  for (i = 0; i <= sector; i++) {
-    bitmap_flip (free_map, sector_locs[i]);
-  }
-
-  return sector_locs;
 }

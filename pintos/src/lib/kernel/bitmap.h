@@ -5,6 +5,13 @@
 #include <stddef.h>
 #include <inttypes.h>
 
+#include "filesys/free-map.h"
+#include <bitmap.h>
+#include <debug.h>
+#include "filesys/file.h"
+#include "filesys/filesys.h"
+#include "filesys/inode.h"
+
 /* Bitmap abstract data type. */
 
 /* Creation and destruction. */
@@ -47,5 +54,8 @@ bool bitmap_write (const struct bitmap *, struct file *);
 
 /* Debugging. */
 void bitmap_dump (const struct bitmap *);
+
+/* Part 2 Functions */
+block_sector_t * bit_get_sectors(const struct bitmap *, int , block_sector_t *);
 
 #endif /* lib/kernel/bitmap.h */
