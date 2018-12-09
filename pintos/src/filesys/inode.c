@@ -96,10 +96,14 @@ static block_sector_t
 byte_to_sector (const struct inode *inode, off_t pos)
 {
   ASSERT (inode != NULL);
+
+  /*
   if (pos < inode->data.length)
     return inode->data.start + pos / BLOCK_SECTOR_SIZE;
   else
     return -1;
+  */
+  return byte_to_sector_new (inode, pos);
 }
 
 /* List of open inodes, so that opening a single inode twice
@@ -515,6 +519,39 @@ num_sectors_needed(const struct inode *inode, off_t pos) {
   }
 }
 
+/*Given a block number, get the value at the offset from it */
+block_sector_t
+get_indirect_pointer (block_sector_t blocknum, block_sector_t offset) {
+
+  block_sector_t* tempBlock = malloc(BLOCK_SECTOR_SIZE);
+
+  //we get the block from the our block
+  block_read (fs_device, blocknum, tempBlock);
+
+  //we get the value of the pointer from our indirectnode block
+  block_sector_t indirectblocknum = tempBlock[indir_elem];
+
+  //we free the block
+  free(tempBlock);
+
+  //we return
+  return indirectblocknum;
+}
+
+/*This writes at a specific location within a node*/
+void
+write_single_elem (block_sector_t blocknum, block_sector_t offset, block_sector_t towrite) {
+
+  block_sector_t* tempBlock = malloc(BLOCK_SECTOR_SIZE);
+
+  //this gets the block in question
+  block_read (fs_device, blocknum, tempBlock);
+
+  //We write towrite at our specific location
+  tempBlock[offset] = towrite;
+
+  block_write (fs_device, blocknum, tempBlock);
+}
 
 /*We are given an inode, and we find the sector which corresponds to the
 pos that we are given. Serves as a replacement for byte_to_sector*/
@@ -526,7 +563,7 @@ byte_to_sector_new (const struct inode *inode, off_t pos) {
 
   //if the file is smaller, we just want to return NULL
   if (inode->data.length <= new_off) {
-    return 0;
+    return -1;
   }
 
   //if it's a direct pointer, we return the direct pointer
@@ -538,17 +575,19 @@ byte_to_sector_new (const struct inode *inode, off_t pos) {
   new_off -= DIRECT_CNT;
 
   if (new_off < INDIRECT_CNT * POINTS_PER_SEC) {
+
+    //if indirect, we're going to need to read the block at that location
+
     int indir_counter = DIV_ROUND_UP(new_off, IN DIRECT_CNT * POINTS_PER_SEC) - 1;
 
     int indir_elem = new_off % POINTS_PER_SEC;
 
+    //we get the number of the indirect node
     block_sector_t indirect = inode->data.sectors[DIRECT_CNT + indir_counter];
 
-    block_read (fs_device, indirect, &inode->data);
+    //this returns the block number at indir_elem
+    return get_indirect_pointer (indirect, indir_elem);
 
-
-
-    [indir_elem];
   }
 
 
@@ -560,11 +599,18 @@ byte_to_sector_new (const struct inode *inode, off_t pos) {
 
   int doub_counter = DIV_ROUND_UP(new_off, POINTS_PER_SEC * POINTS_PER_SEC) - 1;
 
-  int double_elem = new_off % POINTS_PER_SEC * POINTS_PER_SEC;
+  int double_elem = new_off % (POINTS_PER_SEC * POINTS_PER_SEC);
 
   int sing_elem = double_elem % POINTS_PER_SEC;
 
-  return blocks[directpointers + indirectpointers + doubcounter][double_elem][sing_elem]
+  //we get the sector within our disk node that it's located in
+  block_sector_t outer = inode->block.data[directpointers + indirectpointers + doubcounter];
+
+  //this gets the sector corresponding to the indirect node
+  block_sector_t inner = get_indirect_pointer (outer, double_elem);
+
+  //now we return the sector at the end of our node.
+  return get_indirect_pointer (inner, single_elem);
 
 }
 
@@ -574,7 +620,7 @@ which are reserved, we add those sectors to this inode's data. */
 void
 count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_locs) {
 
-  num_blocks_using =  DIV_ROUND_UP(inode->data.length, BLOCK_SECTOR_SIZE);
+  num_blocks_using = DIV_ROUND_UP(inode->data.length, BLOCK_SECTOR_SIZE);
 
   //number we have placed
   num_placed = 0;
@@ -597,7 +643,7 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
       if (iterated_through > num_blocks_using)
 
         //since this is a direct pointer, we just add to the direct pointer
-        block[i] = sector_loc[num_placed];
+        inode->block.data[i] = sector_loc[num_placed];
 
         num_placed++;
 
@@ -614,7 +660,11 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
         if (iterated_through > num_blocks_using);
 
           //since this is an indirect pointer, we add to the pointer there
-          inode->data.block[i][j] = sector_loc[num_placed];
+          //inode->data.block[i][j] = sector_loc[num_placed];
+
+          
+          write_single_elem (i, j, sector_loc[num_placed]) {
+
 
           //and we want to show we used one additional one
           num_placed++;
@@ -651,33 +701,42 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
   }
 }
 
-//
-// block_sector_t*
-// get_data_block(const struct inode *inode, off_t pos, bool extend) {
-//
-//
-//   int sectors_need = num_sectors_needed(inode, pos);
-//
-//   //If the number of sectors we need is larger than the ones we have
-//   //and we can't extend, or it exceeds the file size, we return NULL
-//   if ((sectors_need > DIV_ROUND_UP(inode->data.length, BLOCK_SECTOR_SIZE)
-//   && extend == false) || sectors_need == -1) {
-//     return NULL;
-//   }
-//
-//   //now we allocate the blocks
-//
-//   block_sector_t* sector_locs = calloc(1, sectors_need * sizeof(block_sector_t));
-//
-//   block_sector_t* sectors = get_sectors(sectors_need, sector_locs);
-//
-//   //if it fails, we return
-//   if (sectors == NULL) {
-//     return NULL;
-//   }
-//
-//   //now, we just allocate our sectors
-//   count_alloc(inode, sectors_need, sector_locs);
-//
-//   return
-// }
+/*Given an offset, we return the block */
+block_sector_t *
+get_data_block(const struct inode *inode, off_t pos, bool extend) {
+
+
+
+  //this is the number of blocks we need.
+  int sectors_need = num_sectors_needed(inode, pos);
+
+  int sectors_have = num_sectors_needed(inode, inode->data.length);
+
+  //If the number of sectors we need is larger than the ones we have
+  //and we can't extend, or it exceeds the file size, we return NULL
+  if ((sectors_need > sectors_have)
+  && extend == false) || sectors_need == -1) {
+    return NULL;
+  }
+
+  //now we allocate the blocks
+
+  block_sector_t* sector_locs = calloc(1, sectors_need * sizeof(block_sector_t));
+
+  block_sector_t* sectors = get_sectors(sectors_need, sector_locs);
+
+  //if it fails, we return
+  if (sectors == NULL) {
+    return NULL;
+  }
+
+  //now, we just allocate our sectors
+  count_alloc(inode, sectors_need, sector_locs);
+
+  //this will be the block we will point to.
+  block_sector_t* retblock = malloc (BLOCK_SECTOR_SIZE);
+
+  *retblock =
+
+  return
+}
