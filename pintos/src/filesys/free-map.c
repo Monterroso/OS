@@ -91,7 +91,22 @@ get_sectors(int sectors, block_sector_t * sector_locs) {
   if (sectors != 0
       && free_map_file != NULL
       && bitmap_write (free_map, free_map_file)) {
-        return bit_get_sectors(free_map, sectors, sector_locs);
+
+        //this gets us a list of sectors
+        bit_get_sectors(free_map, sectors, sector_locs);
+
+        static char zeros[BLOCK_SECTOR_SIZE];
+
+        size_t i;
+
+        for (i = 0; i < sectors; i++) {
+
+          //this zeroes out all of the sectors which we are returning
+          block_write (fs_device, sector_locs[i], zeros);
+        }
+
+        return sector_locs;
+
       }
   else {
     return NULL;

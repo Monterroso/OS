@@ -169,7 +169,6 @@ inode_create (block_sector_t sector, off_t length)
               for (i = 0; i < blocks_needed; i++)
                 //change to write to these sectors
                 //block_write (fs_device, disk_inode.start + i, zeros);
-
                 block_write (fs_device, sector_locs[i], zeros);
             }
           success = true;
@@ -261,6 +260,8 @@ inode_close (struct inode *inode)
           //                   bytes_to_sectors (inode->data.length));
 
           //now we go, and free all of our blocks.
+
+
         }
 
       free (inode);
@@ -318,6 +319,8 @@ inode_read_at (struct inode *inode, void *buffer_, off_t size, off_t offset)
                 break;
             }
           block_read (fs_device, sector_idx, bounce);
+
+          //what is this doing exactly?
           memcpy (buffer + bytes_read, bounce + sector_ofs, chunk_size);
         }
 
@@ -662,8 +665,8 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
           //since this is an indirect pointer, we add to the pointer there
           //inode->data.block[i][j] = sector_loc[num_placed];
 
-          
-          write_single_elem (i, j, sector_loc[num_placed]) {
+          //should write the pointer to our location.
+          write_single_elem (inode->data.block[i], j, sector_loc[num_placed]);
 
 
           //and we want to show we used one additional one
@@ -686,7 +689,14 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
           if (iterated_through > used_so_far) {
 
             //since this is an doubleindirect pointer, we add to the pointer there
-            inode->data.block[i][j][k] = sector_loc[num_placed];
+            //inode->data.block[i][j][k] = sector_loc[num_placed];
+
+            //this gets the indirect pointer
+            block_sector_t temp =
+              get_indirect_pointer (inode->data.block[i], j);
+
+            //this should write to the corresponding direct pointer
+            write_single_elem (temp, k, sector_loc[num_placed]);
 
             //and we want to show we used one additional one
             num_placed++;
@@ -701,42 +711,40 @@ count_alloc(const struct inode *inode, off_t num_sects, block_sector_t[] sector_
   }
 }
 
-/*Given an offset, we return the block */
-block_sector_t *
-get_data_block(const struct inode *inode, off_t pos, bool extend) {
-
-
-
-  //this is the number of blocks we need.
-  int sectors_need = num_sectors_needed(inode, pos);
-
-  int sectors_have = num_sectors_needed(inode, inode->data.length);
-
-  //If the number of sectors we need is larger than the ones we have
-  //and we can't extend, or it exceeds the file size, we return NULL
-  if ((sectors_need > sectors_have)
-  && extend == false) || sectors_need == -1) {
-    return NULL;
-  }
-
-  //now we allocate the blocks
-
-  block_sector_t* sector_locs = calloc(1, sectors_need * sizeof(block_sector_t));
-
-  block_sector_t* sectors = get_sectors(sectors_need, sector_locs);
-
-  //if it fails, we return
-  if (sectors == NULL) {
-    return NULL;
-  }
-
-  //now, we just allocate our sectors
-  count_alloc(inode, sectors_need, sector_locs);
-
-  //this will be the block we will point to.
-  block_sector_t* retblock = malloc (BLOCK_SECTOR_SIZE);
-
-  *retblock =
-
-  return
-}
+// /*Given an offset, we return the block */
+// block_sector_t *
+// get_data_block(const struct inode *inode, off_t pos, bool extend) {
+//
+//   //this is the number of blocks we need.
+//   int sectors_need = num_sectors_needed(inode, pos);
+//
+//   int sectors_have = num_sectors_needed(inode, inode->data.length);
+//
+//   //If the number of sectors we need is larger than the ones we have
+//   //and we can't extend, or it exceeds the file size, we return NULL
+//   if ((sectors_need > sectors_have)
+//   && extend == false) || sectors_need == -1) {
+//     return NULL;
+//   }
+//
+//   //now we allocate the blocks
+//
+//   block_sector_t* sector_locs = calloc(1, sectors_need * sizeof(block_sector_t));
+//
+//   block_sector_t* sectors = get_sectors(sectors_need, sector_locs);
+//
+//   //if it fails, we return
+//   if (sectors == NULL) {
+//     return NULL;
+//   }
+//
+//   //now, we just allocate our sectors
+//   count_alloc(inode, sectors_need, sector_locs);
+//
+//   //this will be the block we will point to.
+//   block_sector_t* retblock = malloc (BLOCK_SECTOR_SIZE);
+//
+//   *retblock =
+//
+//   return
+// }
