@@ -84,10 +84,18 @@ free_map_create (void)
     PANIC ("can't write free map");
 }
 
+/*For the new system, this will free things. */
+/*
+void
+free_map_release_new(block_sector_t sector) {
+  //now, we need to go through every single block and make sure that
+  //it is freed.
+}
+/*
 /*This function takes in the freemap, num sectors needed, array to hold sectors
 It returns an array of the pointers that we need*/
 block_sector_t*
-get_sectors(int sectors, block_sector_t * sector_locs) {
+get_sectors(size_t sectors, block_sector_t * sector_locs) {
   if (sectors != 0
       && free_map_file != NULL
       && bitmap_write (free_map, free_map_file)) {

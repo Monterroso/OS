@@ -5,6 +5,7 @@
 #include "filesys/off_t.h"
 #include "devices/block.h"
 
+
 struct bitmap;
 
 void inode_init (void);
@@ -27,6 +28,11 @@ int num_sectors_needed(const struct inode *, off_t);
 void count_alloc(const struct inode *, off_t , block_sector_t * );
 block_sector_t* get_data_block(const struct inode *, off_t, bool);
 block_sector_t byte_to_sector_new (const struct inode *, off_t);
+block_sector_t get_indirect_pointer (block_sector_t, block_sector_t);
+void write_single_elem (block_sector_t, block_sector_t, block_sector_t);
+void inode_disk_sector_write(const struct inode *, off_t, block_sector_t);
+
+
 
 
 #endif /* filesys/inode.h */
